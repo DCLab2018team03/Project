@@ -1,6 +1,8 @@
 module AcappellaCore (
     input  logic         i_clk,
     input  logic         i_rst,
+    input [3:0] KEY,
+    input [17:0] SW,
     // avalon_audio_slave
     // avalon_left_channel_source
     output logic from_adc_left_channel_ready,
@@ -30,9 +32,9 @@ module AcappellaCore (
 	input  logic        new_sdram_controller_0_s1_waitrequest,            //                   .waitrequest
 
 );
-    logic loaddata_done, loaddata_valid, loaddata_done;
+    logic loaddata_done, loaddata_write, loaddata_finished;
     logic [22:0] loaddata_addr;
-    logic [] loaddata_data;
+    logic [15:0] loaddata_writedata;
     LoadCore loader(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -40,19 +42,19 @@ module AcappellaCore (
         .loaddata_done(loaddata_done),
 
         // To SDRAM
-        .loaddata_valid(loadata_valid),
+        .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),
-        .loaddata_data(loaddata_data),
-        .loaddata_finished(loaddata_finished)
+        .loaddata_writedata(loaddata_writedata),
+        .loaddata_finished(loaddata_finished),
 
         // To RS232
     );
 
     logic mix_start, mix_done;
-    logic [] mix_select []; 
+    logic [22:0] mix_select [4:0]; 
     logic mix_read, mix_write, mix_read_finished, mix_write_finished;
     logic [22:0] mix_addr;
-    logic [] mix_readdata, mix_writedata;
+    logic [15:0] mix_readdata, mix_writedata;
     MixCore mixer(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -65,23 +67,20 @@ module AcappellaCore (
         .mix_read(mix_read),
         .mix_addr(mix_addr),
         .mix_readdata(mix_readdata),
-        .mix_read_finished(mix_read_finished)
+        .mix_read_finished(mix_read_finished),
         .mix_write(mix_write),
-        .mix_addr(mix_addr),
         .mix_writedata(mix_writedata),
         .mix_write_finished(mix_write_finished)
     );
     
     logic pitch_start, pitch_done;
-    logic [] pitch_select [];
+    logic [22:0] pitch_select [1:0];
     logic pitch_mode;
-    logic [] pitch_speed;
+    logic [3:0] pitch_speed;
 
-    logic pitch_start, pitch_done;
-    logic [] pitch_select []; 
     logic pitch_read, pitch_write, pitch_read_finished, pitch_write_finished;
     logic [22:0] pitch_addr;
-    logic [] pitch_readdata, pitch_writedata;
+    logic [15:0] pitch_readdata, pitch_writedata;
     PitchCore pitcher(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -96,21 +95,21 @@ module AcappellaCore (
         .pitch_read(pitch_read),
         .pitch_addr(pitch_addr),
         .pitch_readdata(pitch_readdata),
-        .pitch_read_finished(pitch_read_finished)
+        .pitch_read_finished(pitch_read_finished),
         .pitch_write(pitch_write),
-        .pitch_addr(pitch_addr),
         .pitch_writedata(pitch_writedata),
         .pitch_write_finished(pitch_write_finished)
     );
 
     logic record_start, record_pause, record_stop, record_done;
-    logic [] record_select [];
+    logic [22:0] record_select [1:0];
 
-    logic record_start, record_done;
-    logic [] record_select []; 
     logic record_read, record_write, record_read_finished, record_write_finished;
     logic [22:0] record_addr;
-    logic [] record_readdata, record_writedata;
+    logic [15:0] record_readdata, record_writedata;
+
+    logic record_audio_valid, record_audio_ready;
+    logic [15:0] record_audio_data;
     RecordCore recorder(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -127,31 +126,81 @@ module AcappellaCore (
         .record_readdata(record_readdata),
         .record_read_finished(record_read_finished)
         .record_write(record_write),
-        .record_addr(record_addr),
         .record_writedata(record_writedata),
         .record_write_finished(record_write_finished)
+
+        // To audio
+        .record_audio_ready(record_audio_ready),
+        .record_audio_data(record_audio_data),
+        .record_audio_valid(record_audio_valid)
+    );
+
+    logic play_start, play_pause, play_stop, play_done;
+    logic [22:0] play_select;
+
+    logic play_read, play_read_finished;
+    logic [22:0] play_addr;
+    logic [15:0] play_readdata;
+
+    logic play_audio_valid, play_audio_ready;
+    logic [15:0] play_audio_data;
+
+    PlayCore player(
+        .i_clk(i_clk),
+        .i_rst(i_rst),
+        // to controller
+        .play_start(play_start),
+        .play_select(play_select),
+        .play_pause(play_pause),
+        .play_stop(play_stop),
+        .play_done(play_done),
+
+        // To SDRAM
+        .play_read(play_read),
+        .play_addr(play_addr),
+        .play_readdata(play_readdata),
+        .play_read_finished(play_read_finished),
+
+        // To audio
+        .play_audio_valid(play_audio_valid),
+        .play_audio_data(play_audio_data),
+        .play_audio_ready(play_audio_ready)
     );
 
     ControlCore controller(
         .i_clk(i_clk),
         .i_rst(i_rst),
+        // input signal
+        .KEY(KEY),
+        .SW(SW),
+
         .loaddata_done(loaddata_done),
+
         .mix_start(mix_start),
         .mix_select(mix_select),
         .mix_done(mix_done),
+
         .pitch_start(pitch_start),
         .pitch_select(pitch_select),
         .pitch_mode(pitch_mode),
         .pitch_speed(pitch_speed),
         .pitch_done(pitch_done),
+
         .record_start(record_start),
         .record_select(record_select),
         .record_pause(record_pause),
         .record_stop(record_stop),
-        .record_done(record_done)
+        .record_done(record_done),
+
+        .play_start(play_start),
+        .play_select(play_select),
+        .play_pause(play_pause),
+        .play_stop(play_stop),
+        .play_done(play_done),
     );
 
     AudioBus audiobus(
+        // avalon_left_channel_source
         .from_adc_left_channel_ready(w_adc_left_ready),
         .from_adc_left_channel_data(w_adc_left_data),
         .from_adc_left_channel_valid(w_adc_left_valid),
@@ -166,8 +215,18 @@ module AcappellaCore (
         // avalon_left_channel_sink
         .to_dac_right_channel_data(w_dac_right_data),
         .to_dac_right_channel_valid(w_dac_right_valid),
-        .to_dac_right_channel_ready(w_dac_right_ready)
+        .to_dac_right_channel_ready(w_dac_right_ready),
+
+        .record_audio_ready(record_audio_ready),
+        .record_audio_data(record_audio_data),
+        .record_audio_valid(record_audio_valid),
+
+        .play_audio_valid(play_audio_valid),
+        .play_audio_data(play_audio_data),
+        .play_audio_ready(play_audio_ready)
     );
+
+    // TODO: use some mux or other methods to lower the input wires
 
     SDRAMBus sdrambus(
         .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
@@ -180,16 +239,15 @@ module AcappellaCore (
         .new_sdram_controller_0_s1_readdatavalid   (new_sdram_controller_0_s1_readdatavalid),
         .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest),
 
-        .loaddata_valid(loadata_valid),
+        .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),
-        .loaddata_data(loaddata_data),
-        .loaddata_finished(loaddata_finished),
+        .loaddata_writedata(loaddata_writedata),
+        .loaddata_finished(loaddata_finished)
         .mix_read(mix_read),
         .mix_addr(mix_addr),
         .mix_readdata(mix_readdata),
         .mix_read_finished(mix_read_finished)
         .mix_write(mix_write),
-        .mix_addr(mix_addr),
         .mix_writedata(mix_writedata),
         .mix_write_finished(mix_write_finished),
         .pitch_read(pitch_read),
@@ -197,7 +255,6 @@ module AcappellaCore (
         .pitch_readdata(pitch_readdata),
         .pitch_read_finished(pitch_read_finished)
         .pitch_write(pitch_write),
-        .pitch_addr(pitch_addr),
         .pitch_writedata(pitch_writedata),
         .pitch_write_finished(pitch_write_finished),
         .record_read(record_read),
@@ -205,8 +262,11 @@ module AcappellaCore (
         .record_readdata(record_readdata),
         .record_read_finished(record_read_finished)
         .record_write(record_write),
-        .record_addr(record_addr),
         .record_writedata(record_writedata),
-        .record_write_finished(record_write_finished)
+        .record_write_finished(record_write_finished),
+        .play_read(play_read),
+        .play_addr(play_addr),
+        .play_readdata(play_readdata),
+        .play_read_finished(play_read_finished)
     );
 endmodule
