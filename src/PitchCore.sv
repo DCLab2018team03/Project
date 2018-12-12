@@ -11,6 +11,8 @@
 // Give control signal, address(and data).
 // Once finished = 1, data has been writen(or the readdate is correct)
 
+// refresh signal when change address(byteenable issue)
+
 module PitchCore (
     input i_clk,
     input i_rst,
@@ -25,10 +27,10 @@ module PitchCore (
     output pitch_read,
     output [22:0] pitch_addr,
     input  [15:0] pitch_readdata,
-    input  pitch_read_finished,
     output pitch_write,
     output [15:0] pitch_writedata,
-    input  pitch_write_finished
+    input  pitch_sdram_finished,
+    output pitch_sdram_refresh
 );
     
 endmodule

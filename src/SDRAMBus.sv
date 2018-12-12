@@ -3,6 +3,9 @@
 // Be ware of that the input from other module is 16-bit
 
 module SDRAMBus (
+    input i_clk,
+    input i_rst,
+
     output [22:0] new_sdram_controller_0_s1_address,       
 	output [3:0]  new_sdram_controller_0_s1_byteenable_n,        
 	output        new_sdram_controller_0_s1_chipselect,        
@@ -13,36 +16,74 @@ module SDRAMBus (
 	input         new_sdram_controller_0_s1_readdatavalid,        
 	input         new_sdram_controller_0_s1_waitrequest,  
 
-    input  loaddata_write,
-    input  [22:0] loaddata_addr,
-    input  [16:0] loaddata_writedata,
-    output loaddata_finished
-    input  mix_read,
-    input  [22:0] mix_addr,
-    output [15:0] mix_readdata,
-    output mix_read_finished
-    input  mix_write,
-    input  [15:0] mix_writedata,
-    output mix_write_finished,
-    input  pitch_read,
-    input  [22:0] pitch_addr,
-    output [15:0] pitch_readdata,
-    output pitch_read_finished
-    input  pitch_write,
-    input  [15:0]pitch_writedata,
-    output pitch_write_finished,
-    input  record_read,
-    input  [22:0] record_addr,
-    output [15:0] record_readdata,
-    output record_read_finished
-    input  record_write,
-    input  [15:0] record_writedata,
-    output record_write_finished,
-    input  play_read,
-    input  [22:0] play_addr,
-    output [15:0] play_readdata,
-    output play_read_finished
+    input  [22:0] sdram_addr,
+    input  sdram_read,
+    output [15:0] sdram_readdata,
+    input  sdram_write,
+    input  [15:0] sdram_writedata,
+    output sdram_finished,
+    input  sdram_refresh
 
 );
+    logic sdram_bytecounter, n_sdram_bytecounter; // 0 -> [15:0], 1 -> [31:16]
+    assign new_sdram_controller_0_s1_address = sdram_addr;
+    assign new_sdram_controller_0_s1_read_n = ~sdram_read;
+    assign new_sdram_controller_0_s1_write_n = ~sdram_write;
+    assign new_sdram_controller_0_s1_chipselect = 1'b1;
+
+    assign new_sdram_controller_0_s1_byteenable_n = sdram_bytecounter ? 4'b0011 : 4'b1100;
+    // May cause critical path, if so, block FFs here.
+    assign sdram_readdata = sdram_bytecounter ? new_sdram_controller_0_s1_readdata[31:16] : new_sdram_controller_0_s1_readdata[15:0];
+    assign new_sdram_controller_0_s1_writedata = sdram_bytecounter ? {sdram_writedata, 16'd0} : {16'd0, sdram_writedata};
     
+    logic [1:0] state, n_state;
+    localparam IDLE  = 2'b00;
+    localparam READ  = 2'b01;
+    localparam WRITE = 2'b10;
+
+    always_ff @(posedge i_clk or posedge i_rst) begin
+        if (rst) begin
+            state <= IDLE;
+            sdram_bytecounter <= 0;
+        end else begin
+            state <= n_state;
+            sdram_bytecounter <= n_sdram_bytecounter;
+        end
+    end
+
+    always_comb begin
+
+        n_state = state;
+        n_sdram_bytecounter = sdram_bytecounter;
+        sdram_finished = 0;
+        
+        case(state)
+            IDLE: begin
+                if (sdram_read) begin
+                    n_state = READ;
+                end
+                if (sdram_write) begin
+                    n_state = WRITE;
+                end
+                if (sdram_refresh) begin
+                    n_sdram_bytecounter = 0;                    
+                end
+            end
+            READ: begin
+                if (!new_sdram_controller_0_s1_waitrequest && new_sdram_controller_0_s1_readdatavalid) begin
+                    sdram_finished = 1;
+                    n_sdram_bytecounter = ~sdram_bytecounter;
+                    n_state = IDLE;
+                end
+            end
+            WRITE: begin
+                if (!new_sdram_controller_0_s1_waitrequest) begin
+                    sdram_finished = 1;
+                    n_sdram_bytecounter = ~sdram_bytecounter;
+                    n_state = IDLE;
+                end
+            end
+            default: n_state = state;
+        endcase
+    end
 endmodule

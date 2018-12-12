@@ -8,6 +8,8 @@
 // Give control signal, address(and data).
 // Once finished = 1, data has been writen(or the readdate is correct)
 
+// refresh signal when change address(byteenable issue)
+
 module MixCore (
     input i_clk,
     input i_rst,
@@ -20,10 +22,10 @@ module MixCore (
     output mix_read,
     output [22:0] mix_addr,
     input  [15:0] mix_readdata,
-    input  mix_read_finished,
     output mix_write,
     output [15:0] mix_writedata,
-    input  mix_write_finished
+    input  mix_sdram_finished,
+    output mix_sdram_refresh
 );
     
 endmodule
