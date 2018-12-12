@@ -22,19 +22,17 @@ module SDRAMBus (
     input  sdram_write,
     input  [15:0] sdram_writedata,
     output sdram_finished,
-    input  sdram_refresh
 
 );
-    logic sdram_bytecounter, n_sdram_bytecounter; // 0 -> [15:0], 1 -> [31:16]
     assign new_sdram_controller_0_s1_address = sdram_addr;
     assign new_sdram_controller_0_s1_read_n = ~sdram_read;
     assign new_sdram_controller_0_s1_write_n = ~sdram_write;
     assign new_sdram_controller_0_s1_chipselect = 1'b1;
 
-    assign new_sdram_controller_0_s1_byteenable_n = sdram_bytecounter ? 4'b0011 : 4'b1100;
+    assign new_sdram_controller_0_s1_byteenable_n = 4'd0;
     // May cause critical path, if so, block FFs here.
-    assign sdram_readdata = sdram_bytecounter ? new_sdram_controller_0_s1_readdata[31:16] : new_sdram_controller_0_s1_readdata[15:0];
-    assign new_sdram_controller_0_s1_writedata = sdram_bytecounter ? {sdram_writedata, 16'd0} : {16'd0, sdram_writedata};
+    assign sdram_readdata = new_sdram_controller_0_s1_readdata;
+    assign new_sdram_controller_0_s1_writedata = sdram_writedata;
     
     logic [1:0] state, n_state;
     localparam IDLE  = 2'b00;
@@ -44,17 +42,14 @@ module SDRAMBus (
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (rst) begin
             state <= IDLE;
-            sdram_bytecounter <= 0;
         end else begin
             state <= n_state;
-            sdram_bytecounter <= n_sdram_bytecounter;
         end
     end
 
     always_comb begin
 
         n_state = state;
-        n_sdram_bytecounter = sdram_bytecounter;
         sdram_finished = 0;
         
         case(state)
@@ -65,21 +60,16 @@ module SDRAMBus (
                 if (sdram_write) begin
                     n_state = WRITE;
                 end
-                if (sdram_refresh) begin
-                    n_sdram_bytecounter = 0;                    
-                end
             end
             READ: begin
                 if (!new_sdram_controller_0_s1_waitrequest && new_sdram_controller_0_s1_readdatavalid) begin
                     sdram_finished = 1;
-                    n_sdram_bytecounter = ~sdram_bytecounter;
                     n_state = IDLE;
                 end
             end
             WRITE: begin
                 if (!new_sdram_controller_0_s1_waitrequest) begin
                     sdram_finished = 1;
-                    n_sdram_bytecounter = ~sdram_bytecounter;
                     n_state = IDLE;
                 end
             end

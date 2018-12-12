@@ -32,9 +32,9 @@ module AcappellaCore (
 	input  logic        new_sdram_controller_0_s1_waitrequest,            //                   .waitrequest
 
 );
-    logic loaddata_done, loaddata_write, loaddata_sdram_finished, loaddata_refresh;
+    logic loaddata_done, loaddata_write, loaddata_sdram_finished
     logic [22:0] loaddata_addr;
-    logic [15:0] loaddata_writedata;
+    logic [31:0] loaddata_writedata;
     LoadCore loader(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -46,16 +46,15 @@ module AcappellaCore (
         .loaddata_addr(loaddata_addr),
         .loaddata_writedata(loaddata_writedata),
         .loaddata_sdram_finished(loaddata_sdram_finished),
-        .loaddata_refresh(loaddata_refresh)
 
         // To RS232
     );
 
     logic mix_start, mix_done;
     logic [22:0] mix_select [4:0]; 
-    logic mix_read, mix_write, mix_sdram_finished, mix_refresh;
+    logic mix_read, mix_write, mix_sdram_finished;
     logic [22:0] mix_addr;
-    logic [15:0] mix_readdata, mix_writedata;
+    logic [31:0] mix_readdata, mix_writedata;
     MixCore mixer(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -70,8 +69,7 @@ module AcappellaCore (
         .mix_readdata(mix_readdata),
         .mix_write(mix_write),
         .mix_writedata(mix_writedata),
-        .mix_sdram_finished(mix_sdram_finished),
-        .mix_refresh(mix_refresh)
+        .mix_sdram_finished(mix_sdram_finished)
     );
     
     logic pitch_start, pitch_done;
@@ -79,9 +77,9 @@ module AcappellaCore (
     logic pitch_mode;
     logic [3:0] pitch_speed;
 
-    logic pitch_read, pitch_write, pitch_sdram_finished, pitch_refresh;
+    logic pitch_read, pitch_write, pitch_sdram_finished;
     logic [22:0] pitch_addr;
-    logic [15:0] pitch_readdata, pitch_writedata;
+    logic [31:0] pitch_readdata, pitch_writedata;
     PitchCore pitcher(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -98,16 +96,15 @@ module AcappellaCore (
         .pitch_readdata(pitch_readdata),
         .pitch_write(pitch_write),
         .pitch_writedata(pitch_writedata),
-        .pitch_sdram_finished(pitch_sdram_finished),
-        .pitch_sdram_refresh(pitch_sdram_refresh)
+        .pitch_sdram_finished(pitch_sdram_finished)
     );
 
     logic record_start, record_pause, record_stop, record_done;
     logic [22:0] record_select [1:0];
 
-    logic record_read, record_write, record_sdram_finished, record_sdram_refresh;
+    logic record_read, record_write, record_sdram_finished;
     logic [22:0] record_addr;
-    logic [15:0] record_readdata, record_writedata;
+    logic [31:0] record_readdata, record_writedata;
 
     logic record_audio_valid, record_audio_ready;
     logic [15:0] record_audio_data;
@@ -127,8 +124,7 @@ module AcappellaCore (
         .record_readdata(record_readdata),
         .record_write(record_write),
         .record_writedata(record_writedata),
-        .record_sdram_finished(record_sdram_finished),
-        .record_sdram_refresh(record_sdram_refresh)
+        .record_sdram_finished(record_sdram_finished)
 
         // To audio
         .record_audio_ready(record_audio_ready),
@@ -139,12 +135,12 @@ module AcappellaCore (
     logic play_start, play_pause, play_stop, play_done;
     logic [22:0] play_select;
 
-    logic play_read, play_sdram_finished, play_sdram_refresh;
+    logic play_read, play_sdram_finished;
     logic [22:0] play_addr;
-    logic [15:0] play_readdata;
+    logic [31:0] play_readdata;
 
     logic play_audio_valid, play_audio_ready;
-    logic [15:0] play_audio_data;
+    logic [31:0] play_audio_data;
 
     PlayCore player(
         .i_clk(i_clk),
@@ -161,7 +157,6 @@ module AcappellaCore (
         .play_addr(play_addr),
         .play_readdata(play_readdata),
         .play_sdram_finished(play_sdram_finished),
-        .play_sdram_refresh(play_sdram_refresh)
 
         // To audio
         .play_audio_valid(play_audio_valid),
@@ -231,9 +226,9 @@ module AcappellaCore (
         .play_audio_ready(play_audio_ready)
     );
 
-    logic sdram_read, sdram_write, sdram_finished, sdram_refresh;
+    logic sdram_read, sdram_write, sdram_finished;
     logic [22:0] sdram_addr;
-    logic [15:0] sdram_readdata, sdram_writedata;
+    logic [31:0] sdram_readdata, sdram_writedata;
 
     // WARNING: all input signal should be set to 0 if not used !!!!!!!
     // Maybe use MUX is better. need some discusssion 
@@ -241,7 +236,6 @@ module AcappellaCore (
     assign sdram_write = loaddata_write | mix_write | pitch_write | record_write;
     assign sdram_addr = loaddata_addr | mix_addr | pitch_addr | record_addr | play_addr;
     assign sdram_writedata = loaddata_writedata | mix_writedata | pitch_writedata | record_writedata;
-    assign sdram_refresh = loaddata_sdram_refresh | mix_sdram_refresh | pitch_sdram_refresh | record_sdram_refresh | play_sdram_refresh;
 
     assign mix_readdata    = sdram_readdata;
     assign pitch_readdata  = sdram_readdata;
@@ -271,8 +265,7 @@ module AcappellaCore (
         .sdram_readdata(sdram_readdata),
         .sdram_write(sdram_write),
         .sdram_writedata(sdram_writedata),
-        .sdram_finished(sdram_finished),
-        .sdram_refresh(sdram_refresh)
+        .sdram_finished(sdram_finished)
         /*
         .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),

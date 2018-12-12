@@ -10,8 +10,6 @@
 // Give control signal, address(and data).
 // Once finished = 1, data has been writen(or the readdate is correct)
 
-// refresh signal when change address(byteenable issue)
-
 module PlayCore (
     input i_clk,
     input i_rst,
@@ -25,13 +23,12 @@ module PlayCore (
     // To SDRAM
     output play_read,
     output [22:0] play_addr,
-    input  [15:0] play_readdata,
+    input  [31:0] play_readdata,
     input  play_sdram_finished,
-    output play_sdram_refresh,
 
     // To audio
     output play_audio_valid,
-    output [15:0] play_audio_data,
+    output [31:0] play_audio_data,
     input  play_audio_ready
 );
     

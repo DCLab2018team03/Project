@@ -15,9 +15,8 @@ module LoadCore (
     // To SDRAM
     output loaddata_write,
     output [22:0] loaddata_addr,
-    output [15:0] loaddata_writedata,
-    input  loaddata_sdram_finished,
-    output loaddata_sdram_refresh
+    output [31:0] loaddata_writedata,
+    input  loaddata_sdram_finished
 
     // To RS232
 );
