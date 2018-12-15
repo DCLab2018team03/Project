@@ -32,7 +32,7 @@ module RecordCore (
 
     // To audio
     output record_audio_ready,
-    input  [15:0] record_audio_data,
+    input  [31:0] record_audio_data,
     input  record_audio_valid
 );
     
