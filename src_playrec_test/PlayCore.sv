@@ -53,10 +53,12 @@ module PlayCore (
         end
     end
 
+    assign play_done = 0;
+
     always_comb begin
 
         n_state = state;
-        n_audio = audio;
+        n_audio_data = audio_data;
         n_addr = addr; 
 
         play_read = 0;
@@ -70,6 +72,9 @@ module PlayCore (
                 end
             end
             READ: begin
+                if (!play_start) begin
+                    n_state = IDLE;
+                end
                 play_read = 1;
                 n_audio_data = play_readdata;
                 if (play_sdram_finished) begin
@@ -78,12 +83,15 @@ module PlayCore (
                 end
             end
             PLAY: begin
+                if (!play_start) begin
+                    n_state = IDLE;
+                end
                 play_audio_valid = 1;
                 if (play_audio_ready) begin
                     n_state = READ;
                 end
             end
-            default:
+            default: n_state = state;
         endcase
     end
 endmodule

@@ -29,10 +29,10 @@ module AcappellaCore (
 	output logic        new_sdram_controller_0_s1_write_n,                //                   .write_n
 	input  logic [31:0] new_sdram_controller_0_s1_readdata,               //                   .readdata
 	input  logic        new_sdram_controller_0_s1_readdatavalid,          //                   .readdatavalid
-	input  logic        new_sdram_controller_0_s1_waitrequest,            //                   .waitrequest
+	input  logic        new_sdram_controller_0_s1_waitrequest             //                   .waitrequest
 
 );
-    logic loaddata_done, loaddata_write, loaddata_sdram_finished
+    logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
     logic [31:0] loaddata_writedata;
     LoadCore loader(
@@ -45,7 +45,7 @@ module AcappellaCore (
         .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),
         .loaddata_writedata(loaddata_writedata),
-        .loaddata_sdram_finished(loaddata_sdram_finished),
+        .loaddata_sdram_finished(loaddata_sdram_finished)
 
         // To RS232
     );
@@ -124,7 +124,7 @@ module AcappellaCore (
         .record_readdata(record_readdata),
         .record_write(record_write),
         .record_writedata(record_writedata),
-        .record_sdram_finished(record_sdram_finished)
+        .record_sdram_finished(record_sdram_finished),
 
         // To audio
         .record_audio_ready(record_audio_ready),
@@ -193,7 +193,7 @@ module AcappellaCore (
         .play_select(play_select),
         .play_pause(play_pause),
         .play_stop(play_stop),
-        .play_done(play_done),
+        .play_done(play_done)
     );
 
     AudioBus audiobus(
@@ -201,21 +201,21 @@ module AcappellaCore (
         .i_rst(i_rst),
 
         // avalon_left_channel_source
-        .from_adc_left_channel_ready(w_adc_left_ready),
-        .from_adc_left_channel_data(w_adc_left_data),
-        .from_adc_left_channel_valid(w_adc_left_valid),
+        .from_adc_left_channel_ready(from_adc_left_channel_ready),
+        .from_adc_left_channel_data(from_adc_left_channel_data),
+        .from_adc_left_channel_valid(from_adc_left_channel_valid),
         // avalon_right_channel_source
-        .from_adc_right_channel_ready(w_adc_right_ready),
-        .from_adc_right_channel_data(w_adc_right_data),
-        .from_adc_right_channel_valid(w_adc_right_valid),
+        .from_adc_right_channel_ready(from_adc_right_channel_ready),
+        .from_adc_right_channel_data(from_adc_right_channel_data),
+        .from_adc_right_channel_valid(from_adc_right_channel_valid),
         // avalon_left_channel_sink
-        .to_dac_left_channel_data(w_dac_left_data),
-        .to_dac_left_channel_valid(w_dac_left_valid),
-        .to_dac_left_channel_ready(w_dac_left_ready),
+        .to_dac_left_channel_data(to_dac_left_channel_data),
+        .to_dac_left_channel_valid(to_dac_left_channel_valid),
+        .to_dac_left_channel_ready(to_dac_left_channel_ready),
         // avalon_left_channel_sink
-        .to_dac_right_channel_data(w_dac_right_data),
-        .to_dac_right_channel_valid(w_dac_right_valid),
-        .to_dac_right_channel_ready(w_dac_right_ready),
+        .to_dac_right_channel_data(to_dac_right_channel_data),
+        .to_dac_right_channel_valid(to_dac_right_channel_valid),
+        .to_dac_right_channel_ready(to_dac_right_channel_ready),
 
         .record_audio_ready(record_audio_ready),
         .record_audio_data(record_audio_data),

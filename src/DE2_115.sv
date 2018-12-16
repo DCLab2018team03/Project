@@ -300,9 +300,9 @@ module DE2_115 (
         .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest)
 	);
 
-    Debounce deb0(KEY[0], CLOCK_50, KEY_debounced[0]);
-    Debounce deb1(KEY[1], CLOCK_50, KEY_debounced[1]);
-    Debounce deb2(KEY[2], CLOCK_50, KEY_debounced[2]);
-    Debounce deb3(KEY[3], CLOCK_50, KEY_debounced[3]);
+    Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]);
+    Debounce deb1(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]);
+    Debounce deb2(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]);
+    Debounce deb3(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]);
     
 endmodule

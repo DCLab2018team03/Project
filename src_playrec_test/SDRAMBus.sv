@@ -18,10 +18,10 @@ module SDRAMBus (
 
     input  logic [22:0] sdram_addr,
     input  logic sdram_read,
-    output logic [15:0] sdram_readdata,
+    output logic [31:0] sdram_readdata,
     input  logic sdram_write,
-    input  logic [15:0] sdram_writedata,
-    output logic sdram_finished,
+    input  logic [31:0] sdram_writedata,
+    output logic sdram_finished
 
 );
     assign new_sdram_controller_0_s1_address = sdram_addr;
@@ -40,7 +40,7 @@ module SDRAMBus (
     localparam WRITE = 2'b10;
 
     always_ff @(posedge i_clk or posedge i_rst) begin
-        if (rst) begin
+        if (i_rst) begin
             state <= IDLE;
         end else begin
             state <= n_state;
@@ -71,7 +71,7 @@ module SDRAMBus (
                 end
             end
             WRITE: begin
-                if (!sdram_read) begin
+                if (!sdram_write) begin
                     n_state = IDLE;
                 end
                 if (!new_sdram_controller_0_s1_waitrequest) begin

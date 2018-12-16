@@ -52,10 +52,14 @@ module RecordCore (
             audio_data <= n_audio_data;
         end
     end
+    assign record_done = 0;
+    assign record_read = 0;
+    assign record_addr = 0;
 
     always_comb begin
         
         n_state = state;
+        n_audio_data = audio_data;
 
         record_audio_ready = 0;
         record_write = 0;
@@ -85,7 +89,7 @@ module RecordCore (
                     n_state = REC;
                 end
             end
-            default:
+            default: n_state = state;
         endcase
 
     end

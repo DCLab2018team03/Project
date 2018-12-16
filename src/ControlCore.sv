@@ -23,7 +23,7 @@ module ControlCore (
     output [22:0] play_select,
     output play_pause,
     output play_stop,
-    input  play_done,
+    input  play_done
 );
     parameter IDLE        = 4'd0;
     parameter LOAD        = 4'd1;

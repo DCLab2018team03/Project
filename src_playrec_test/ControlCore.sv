@@ -23,7 +23,7 @@ module ControlCore (
     output logic [22:0] play_select,
     output logic play_pause,
     output logic play_stop,
-    input  logic play_done,
+    input  logic play_done
 );
     logic [3:0] state, n_state;
     parameter IDLE        = 4'd0;
@@ -40,12 +40,29 @@ module ControlCore (
             state <= n_state;
         end
     end
+    assign mix_start = 0;
+    assign mix_select[0] = 0;
+    assign mix_select[1] = 0;
+    assign mix_select[2] = 0;
+    assign mix_select[3] = 0;
+    assign mix_select[4] = 0;
+    assign pitch_start = 0;
+    assign pitch_select[0] = 0;
+    assign pitch_select[1] = 0;
+    assign pitch_mode = 0;
+    assign pitch_speed = 0;
+    assign record_select[0] = 0;
+    assign record_select[1] = 0;
+    assign record_pause = 0;
+    assign record_stop = 0;
+    assign play_select = 0;
+    assign play_pause = 0;
+    assign play_stop = 0;
 
     always_comb begin
         
+        n_state = state;
         record_start = 0;
-        pitch_start = 0;
-        mix_start = 0;
         play_start = 0;
 
         case(state)
@@ -63,10 +80,10 @@ module ControlCore (
             PLAY: begin
                 play_start = 1;
                 if (KEY[0]) begin
-                    n_state = REC;
+                    n_state = RECORD;
                 end
             end
-            default:
+            default: n_state =state;
         endcase
 
     end

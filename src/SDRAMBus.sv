@@ -71,7 +71,7 @@ module SDRAMBus (
                 end
             end
             WRITE: begin
-                if (!sdram_read) begin
+                if (!sdram_write) begin
                     n_state = IDLE;
                 end
                 if (!new_sdram_controller_0_s1_waitrequest) begin

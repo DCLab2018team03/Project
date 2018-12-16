@@ -43,9 +43,9 @@ module AudioBus (
     assign record_audio_data = audio_data;
 
     logic [1:0] state, n_state;
-    localparam IDLE = 2'd00;
-    localparam PLAY = 2'd01;
-    localparam REC  = 2'd10;
+    localparam IDLE = 2'b00;
+    localparam PLAY = 2'b01;
+    localparam REC  = 2'b10;
 
     
 
@@ -81,6 +81,10 @@ module AudioBus (
 
         case(state)
             IDLE: begin
+                n_to_left_valid = 0;
+                n_to_right_valid = 0;
+                n_from_left_ready = 0;
+                n_from_right_ready = 0;
                 if (play_audio_valid) begin
                     n_to_left_valid = 1;
                     n_to_right_valid = 1;
@@ -115,7 +119,7 @@ module AudioBus (
                     n_audio_data[31:16] = from_adc_left_channel_data;
                     n_from_left_ready = 0;
                 end
-                if (from_adc_left_channel_valid) begin
+                if (from_adc_right_channel_valid) begin
                     n_audio_data[15:0] = from_adc_right_channel_data;
                     n_from_right_ready = 0;
                 end
@@ -124,7 +128,7 @@ module AudioBus (
                     n_state = IDLE;
                 end
             end
-            default:
+            default: n_state = state;
         endcase
     end
 
