@@ -10,7 +10,7 @@
 // Communicate with SDRAM by read, write.
 // Give control signal, address(and data).
 // Once finished = 1, data has been writen(or the readdate is correct)
-`include "AcappellaDefine.sv"
+`include "PitchDefine.sv"
 
 module PitchCore (
     input i_clk,
