@@ -4,7 +4,7 @@
 // _select is an "address array"
 // 0 is the storage address, and others are target address.
 
-// mode is either speed-up or shift frequency
+// mode is either time-stretch or pitch-shift
 // speed is the required ratio of each of them
 
 // Communicate with SDRAM by read, write.
@@ -30,21 +30,43 @@ module PitchCore (
     output [31:0] pitch_writedata,
     input  pitch_sdram_finished
 );
+    localparam IDLE = 0;
+    localparam READ_SDRAM = 1;
+    localparam WRITE_SDRAM = 2;
+    localparam OLA_COMPUTE = 3;
+    localparam RESAMPLE = 4; // only use when pitch-shift
+    logic [3:0] state, n_state;
 
-    
-    
-endmodule
+    logic [:] input_buffer;
+    logic [:] output_buffer;
+    always_ff @(posedge i_clk or posedge i_rst) begin
+        if (i_rst) begin
+            state <= IDLE;
+        end else begin
+            state <= n_state;
+        end 
+    end
 
-module HannWindow (
-    input i_clk,
-    input [$clog2(WindowSize):0] address, // address for get Hanning Window value
-    output [15:0] coeff // not sure about the bit length yet
-);
-    logic [15:0] coeff;
-    always_ff (posedge i_clk) begin
-	case (address)
-        8'h00: coeff = 15'h0000;
-        
-    
-    endcase
+    always_comb begin
+        n_state = state;
+        case (state)
+            IDLE: begin
+                if (pitch_start) begin
+                    n_state = READ_SDRAM;
+                end
+            end
+            READ_SDRAM: begin
+
+            end 
+            WRITE_SDRAM: begin
+
+            end
+            OLA_COMPUTE: begin
+
+            end
+            RESAMPLE: begin
+
+            end
+        endcase
+    end
 endmodule
