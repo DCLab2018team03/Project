@@ -68,11 +68,11 @@ module PlayCore (
             IDLE: begin
                 if (play_start) begin
                     n_state = READ;
-                    n_addr = 0;
                 end
+                n_addr = 0;
             end
             READ: begin
-                if (!play_start) begin
+				if (!play_start) begin
                     n_state = IDLE;
                 end
                 play_read = 1;
@@ -83,7 +83,7 @@ module PlayCore (
                 end
             end
             PLAY: begin
-                if (!play_start) begin
+				if (!play_start) begin
                     n_state = IDLE;
                 end
                 play_audio_valid = 1;

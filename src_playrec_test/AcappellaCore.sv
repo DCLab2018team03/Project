@@ -3,6 +3,7 @@ module AcappellaCore (
     input  logic         i_rst,
     input [3:0] KEY,
     input [17:0] SW,
+	output logic [8:0] LEDG,
     // avalon_audio_slave
     // avalon_left_channel_source
     output logic from_adc_left_channel_ready,
@@ -107,7 +108,7 @@ module AcappellaCore (
     logic [31:0] record_readdata, record_writedata;
 
     logic record_audio_valid, record_audio_ready;
-    logic [15:0] record_audio_data;
+    logic [31:0] record_audio_data;
     RecordCore recorder(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -196,6 +197,77 @@ module AcappellaCore (
         .play_done(play_done)
     );
 
+    
+
+    logic sdram_read, sdram_write, sdram_finished;
+    logic [22:0] sdram_addr;
+    logic [31:0] sdram_readdata, sdram_writedata;
+
+    logic [1:0] debug;
+
+    // WARNING: all input signal should be set to 0 if not used !!!!!!!
+    // Maybe use MUX is better. need some discusssion 
+	assign LEDG[0] = record_start;
+	//assign LEDG[1] = record_write;
+	//assign LEDG[2] = new_sdram_controller_0_s1_waitrequest;
+    always_ff @(posedge i_clk or posedge i_rst) begin
+        if ( i_rst ) begin
+            LEDG[1] <= 0;
+            LEDG[2] <= 0;
+            LEDG[3] <= 0;
+            LEDG[4] <= 0;
+        end else begin
+            if (play_audio_ready) begin
+                LEDG[1] <= 1;
+            end else begin
+                LEDG[1] <= 0;
+            end
+            case(debug)
+                2'd0: begin
+                    LEDG[2] <= 1;
+                    LEDG[3] <= 0;
+                    LEDG[4] <= 0;
+                end
+                2'd1: begin
+                    LEDG[2] <= 0;
+                    LEDG[3] <= 1;
+                    LEDG[4] <= 0;
+                end
+                2'd2: begin
+                    LEDG[2] <= 0;
+                    LEDG[3] <= 0;
+                    LEDG[4] <= 1;
+                end
+                default: begin
+                    LEDG[2] <= 0;
+                    LEDG[3] <= 0;
+                    LEDG[4] <= 0;
+                end
+            endcase
+        end
+    end
+	//assign LEDG[3] = record_sdram_finished;
+	//assign LEDG[4] = to_dac_left_channel_valid;
+	assign LEDG[5] = play_audio_ready;
+	assign LEDG[6] = record_audio_ready;
+	assign LEDG[7] = record_audio_valid;
+    assign sdram_read = play_read;
+    assign sdram_write = record_write;
+    assign sdram_addr = play_addr | record_addr;
+    assign sdram_writedata = record_writedata;
+
+    assign mix_readdata    = sdram_readdata;
+    assign pitch_readdata  = sdram_readdata;
+    assign record_readdata = sdram_readdata;
+    assign play_readdata   = sdram_readdata;
+
+    assign loaddata_sdram_finished = sdram_finished;
+    assign mix_sdram_finished      = sdram_finished;
+    assign pitch_sdram_finished    = sdram_finished;
+    assign record_sdram_finished   = sdram_finished;
+    assign play_sdram_finished     = sdram_finished;
+    
+
     AudioBus audiobus(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -223,33 +295,14 @@ module AcappellaCore (
 
         .play_audio_valid(play_audio_valid),
         .play_audio_data(play_audio_data),
-        .play_audio_ready(play_audio_ready)
+        .play_audio_ready(play_audio_ready),
+        .debug(debug)
     );
 
-    logic sdram_read, sdram_write, sdram_finished;
-    logic [22:0] sdram_addr;
-    logic [31:0] sdram_readdata, sdram_writedata;
-
-    // WARNING: all input signal should be set to 0 if not used !!!!!!!
-    // Maybe use MUX is better. need some discusssion 
-    assign sdram_read = play_read;
-    assign sdram_write = record_write;
-    assign sdram_addr = play_addr;
-    assign sdram_writedata = record_writedata;
-
-    assign mix_readdata    = sdram_readdata;
-    assign pitch_readdata  = sdram_readdata;
-    assign record_readdata = sdram_readdata;
-    assign play_readdata   = sdram_readdata;
-
-    assign loaddata_sdram_finished = sdram_finished;
-    assign mix_sdram_finished      = sdram_finished;
-    assign pitch_sdram_finished    = sdram_finished;
-    assign record_sdram_finished   = sdram_finished;
-    assign play_sdram_finished     = sdram_finished;
-
-
     SDRAMBus sdrambus(
+        .i_clk(i_clk),
+        .i_rst(i_rst),
+
         .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
         .new_sdram_controller_0_s1_byteenable_n    (new_sdram_controller_0_s1_byteenable_n),
         .new_sdram_controller_0_s1_chipselect      (new_sdram_controller_0_s1_chipselect),
@@ -266,6 +319,7 @@ module AcappellaCore (
         .sdram_write(sdram_write),
         .sdram_writedata(sdram_writedata),
         .sdram_finished(sdram_finished)
+        //.debug(debug)
         /*
         .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),

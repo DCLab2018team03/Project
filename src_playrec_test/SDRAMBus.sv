@@ -21,12 +21,13 @@ module SDRAMBus (
     output logic [31:0] sdram_readdata,
     input  logic sdram_write,
     input  logic [31:0] sdram_writedata,
-    output logic sdram_finished
+    output logic sdram_finished,
+    output [1:0] debug
 
 );
     assign new_sdram_controller_0_s1_address = sdram_addr;
-    assign new_sdram_controller_0_s1_read_n = ~sdram_read;
-    assign new_sdram_controller_0_s1_write_n = ~sdram_write;
+    assign new_sdram_controller_0_s1_read_n = !sdram_read;
+    assign new_sdram_controller_0_s1_write_n = !sdram_write;
     assign new_sdram_controller_0_s1_chipselect = 1'b1;
 
     assign new_sdram_controller_0_s1_byteenable_n = 4'd0;
@@ -35,6 +36,7 @@ module SDRAMBus (
     assign new_sdram_controller_0_s1_writedata = sdram_writedata;
     
     logic [1:0] state, n_state;
+    assign debug = state;
     localparam IDLE  = 2'b00;
     localparam READ  = 2'b01;
     localparam WRITE = 2'b10;

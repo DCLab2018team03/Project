@@ -70,6 +70,9 @@ module ControlCore (
                 if (KEY[0]) begin
                     n_state = RECORD;
                 end
+                if (KEY[1]) begin
+                    n_state = PLAY;
+                end
             end
             RECORD: begin
                 record_start = 1;

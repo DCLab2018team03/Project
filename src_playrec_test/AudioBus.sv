@@ -28,7 +28,8 @@ module AudioBus (
 
     input  logic play_audio_valid,
     input  logic [31:0] play_audio_data,
-    output logic play_audio_ready
+    output logic play_audio_ready,
+    output [1:0] debug
 );
     logic to_left_valid, to_right_valid, n_to_left_valid, n_to_right_valid;
     assign to_dac_left_channel_valid = to_left_valid;
@@ -36,11 +37,14 @@ module AudioBus (
     assign to_dac_left_channel_data = play_audio_data[31:16];
     assign to_dac_right_channel_data = play_audio_data[15:0];
 
+
     logic from_left_ready, from_right_ready, n_from_left_ready, n_from_right_ready;
     logic [31:0] audio_data, n_audio_data;
     assign from_adc_left_channel_ready = from_left_ready;
     assign from_adc_right_channel_ready = from_right_ready;
     assign record_audio_data = audio_data;
+
+    assign debug = state;
 
     logic [1:0] state, n_state;
     localparam IDLE = 2'b00;
@@ -81,10 +85,6 @@ module AudioBus (
 
         case(state)
             IDLE: begin
-                n_to_left_valid = 0;
-                n_to_right_valid = 0;
-                n_from_left_ready = 0;
-                n_from_right_ready = 0;
                 if (play_audio_valid) begin
                     n_to_left_valid = 1;
                     n_to_right_valid = 1;
@@ -99,6 +99,8 @@ module AudioBus (
             PLAY: begin
                 if (!play_audio_valid) begin
                     n_state = IDLE;
+                    n_to_left_valid = 0;
+				    n_to_right_valid = 0;
                 end
                 if (to_dac_left_channel_ready) begin
                     n_to_left_valid = 0;
@@ -114,6 +116,8 @@ module AudioBus (
             REC: begin
                 if (!record_audio_ready) begin
                     n_state = IDLE;
+                    n_from_left_ready = 0;
+				    n_from_right_ready = 0;
                 end
                 if (from_adc_left_channel_valid) begin
                     n_audio_data[31:16] = from_adc_left_channel_data;

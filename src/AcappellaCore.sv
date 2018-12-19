@@ -32,7 +32,7 @@ module AcappellaCore (
 	input  logic        new_sdram_controller_0_s1_waitrequest             //                   .waitrequest
 
 );
-    logic loaddata_done, loaddata_write, loaddata_sdram_finished
+    logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
     logic [31:0] loaddata_writedata;
     LoadCore loader(
@@ -124,7 +124,7 @@ module AcappellaCore (
         .record_readdata(record_readdata),
         .record_write(record_write),
         .record_writedata(record_writedata),
-        .record_sdram_finished(record_sdram_finished)
+        .record_sdram_finished(record_sdram_finished),
 
         // To audio
         .record_audio_ready(record_audio_ready),
@@ -196,6 +196,29 @@ module AcappellaCore (
         .play_done(play_done)
     );
 
+
+    logic sdram_read, sdram_write, sdram_finished;
+    logic [22:0] sdram_addr;
+    logic [31:0] sdram_readdata, sdram_writedata;
+
+    // WARNING: all input signal should be set to 0 if not used !!!!!!!
+    // Maybe use MUX is better. need some discusssion 
+    assign sdram_read = mix_read | pitch_read | record_read | play_read;
+    assign sdram_write = loaddata_write | mix_write | pitch_write | record_write;
+    assign sdram_addr = loaddata_addr | mix_addr | pitch_addr | record_addr | play_addr;
+    assign sdram_writedata = loaddata_writedata | mix_writedata | pitch_writedata | record_writedata;
+
+    assign mix_readdata    = sdram_readdata;
+    assign pitch_readdata  = sdram_readdata;
+    assign record_readdata = sdram_readdata;
+    assign play_readdata   = sdram_readdata;
+
+    assign loaddata_sdram_finished = sdram_finished;
+    assign mix_sdram_finished      = sdram_finished;
+    assign pitch_sdram_finished    = sdram_finished;
+    assign record_sdram_finished   = sdram_finished;
+    assign play_sdram_finished     = sdram_finished;
+
     AudioBus audiobus(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -225,31 +248,11 @@ module AcappellaCore (
         .play_audio_data(play_audio_data),
         .play_audio_ready(play_audio_ready)
     );
-
-    logic sdram_read, sdram_write, sdram_finished;
-    logic [22:0] sdram_addr;
-    logic [31:0] sdram_readdata, sdram_writedata;
-
-    // WARNING: all input signal should be set to 0 if not used !!!!!!!
-    // Maybe use MUX is better. need some discusssion 
-    assign sdram_read = mix_read | pitch_read | record_read | play_read;
-    assign sdram_write = loaddata_write | mix_write | pitch_write | record_write;
-    assign sdram_addr = loaddata_addr | mix_addr | pitch_addr | record_addr | play_addr;
-    assign sdram_writedata = loaddata_writedata | mix_writedata | pitch_writedata | record_writedata;
-
-    assign mix_readdata    = sdram_readdata;
-    assign pitch_readdata  = sdram_readdata;
-    assign record_readdata = sdram_readdata;
-    assign play_readdata   = sdram_readdata;
-
-    assign loaddata_sdram_finished = sdram_finished;
-    assign mix_sdram_finished      = sdram_finished;
-    assign pitch_sdram_finished    = sdram_finished;
-    assign record_sdram_finished   = sdram_finished;
-    assign play_sdram_finished     = sdram_finished;
-
-
+    
     SDRAMBus sdrambus(
+        .i_clk(i_clk),
+        .i_rst(i_rst),
+        
         .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
         .new_sdram_controller_0_s1_byteenable_n    (new_sdram_controller_0_s1_byteenable_n),
         .new_sdram_controller_0_s1_chipselect      (new_sdram_controller_0_s1_chipselect),

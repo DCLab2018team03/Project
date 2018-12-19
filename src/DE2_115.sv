@@ -219,6 +219,16 @@ module DE2_115 (
 	wire            w_dac_right_valid;
 	wire    [15:0]  w_input_event;
     logic           w_stop_signal, n_stop_signal;
+
+    wire    [22:0]  new_sdram_controller_0_s1_address;
+    wire    [3:0]   new_sdram_controller_0_s1_byteenable_n;
+    wire            new_sdram_controller_0_s1_chipselect;
+    wire    [31:0]  new_sdram_controller_0_s1_writedata;
+    wire            new_sdram_controller_0_s1_read_n;
+    wire            new_sdram_controller_0_s1_write_n;
+    wire    [31:0]  new_sdram_controller_0_s1_readdata;
+    wire            new_sdram_controller_0_s1_readdatavalid;
+    wire            new_sdram_controller_0_s1_waitrequest;
     logic [3:0] KEY_debounced;
 
     Total total(
@@ -300,9 +310,9 @@ module DE2_115 (
         .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest)
 	);
 
-    Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]);
-    Debounce deb1(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]);
-    Debounce deb2(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]);
-    Debounce deb3(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]);
+    Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
+    Debounce deb1(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
+    Debounce deb2(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
+    Debounce deb3(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]));
     
 endmodule
