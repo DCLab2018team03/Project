@@ -14,30 +14,44 @@ def ola (data, s, N, H_a):
     new_data = new_data.astype(np.int16)
     return new_data
 
-def wsola (data, s, N, H_a):
+def wsola (data, s, N, H_s, tolerance):
     L = len(data)
-    delta_max = 256
-    H_s = int (s*H_a)
-
-    x = []
-    for i in range(0, L-N-H_s-delta_max, H_a):
-        if i == 0:
-            x.append(data[0:N])
-            last_x = data[i+H_s:i+H_s+N]
-        else:
-            try_x = np.correlate(
-                data[i:i+N-H_s],
-                last_x)
-            index = np.argmax(try_x)
-            best_x = data[i+index:i+index+N]
-            x.append(best_x)
-            last_x = data[i+index+H_s:i+index+H_s+N]
-
-    x = np.array(x)
+    H_a = int(H_s / s)
+    
     Hann_window = np.array([0.5*(1-np.cos( 2*np.pi* (i+N//2) / (N-1) )) for i in range(-N//2, N//2)])
-    new_data = np.zeros((H_s*len(x)+N-H_s))
-    for i in range( 0, len(x)):
-        new_data[i*H_s:i*H_s+N] += x[i] * Hann_window
+
+    delta_max = tolerance
+    x = []
+    for i in range(0, L-N-delta_max, H_a):
+        if i == 0:
+            x.append(data[0:N+H_s])
+        else:
+            if i-delta_max < 0:
+                start = 0
+            else:
+                start = i-delta_max
+            frame = data[start:i+delta_max+N+H_s]
+            frame = np.pad(frame, (N+2*tolerance+H_s-len(frame), 0),'constant', constant_values=(0, 0))
+            x.append(frame)
+      
+    x = np.array(x)
+    new_x = []
+    for i in range(0, len(x)):
+        if i == 0:
+            index = 0
+        else:
+            cross_correlation = np.correlate(
+                    x[i][:-H_s], last_x)
+            index = np.argmax(cross_correlation)
+            
+        new_x.append(x[i][index:index+N]*Hann_window)
+        last_x = x[i][index+H_s:index+H_s+N]*Hann_window 
+        
+    new_x = np.array(new_x)
+
+    new_data = np.zeros(H_s*len(new_x)+N-H_s)
+    for i in range( 0, len(new_x)):
+        new_data[i*H_s:i*H_s+N] += new_x[i]
     
     new_data = new_data.astype(np.int16)
     return new_data
@@ -64,16 +78,17 @@ def vocoder (data, s, N, H_a, sample_rate):
 
 
 if __name__ == "__main__":
-    sample_rate, ori_data = wav.read('DAOKO.wav')
+    sample_rate, ori_data = wav.read('ite.wav')
 
     s = 1.3 # stretching factor
-    N = 512 # window_size
-    H_a = 256 # original shift
+    N = 1024 # window_size
+    H_s = N//2 # original shift
+    tolerance = N//2
 
     #new_data = ola (ori_data, s, N, H_a)
     
-    left  = wsola (ori_data[:,0], s, N, H_a)
-    right = wsola (ori_data[:,1], s, N, H_a)
+    left  = wsola (ori_data[:,0], s, N, H_s, tolerance)
+    right = wsola (ori_data[:,1], s, N, H_s, tolerance)
     new_data = np.zeros( (len(left), 2) , dtype = 'int16')
     new_data[:,0] = left
     new_data[:,1] = right
