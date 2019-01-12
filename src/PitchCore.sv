@@ -35,7 +35,12 @@ module PitchCore (
     localparam WRITE_SDRAM = 2;
     localparam OLA_COMPUTE = 3;
     localparam RESAMPLE = 4; // only use when pitch-shift
+
+    localparam READ_HEADER = 0;
+    localparam READ_DATA   = 1;
+
     logic [3:0] state, n_state;
+    logic       data_state, n_data_state;
 
     logic n_pitch_done;
     logic n_pitch_read, n_pitch_write;
@@ -43,7 +48,8 @@ module PitchCore (
     logic [31:0] n_pitch_writedata;
 
     logic [31:0] data_length;
-    logic [15:0] left_data, right_data;
+    logic [15:0] left_data [255:0];
+    logic [15:0] right_data[255:0];
     logic [31:0] counter, n_counter;
 
     always_ff @(posedge i_clk or posedge i_rst) begin
@@ -55,6 +61,7 @@ module PitchCore (
             pitch_addr <= 23'd0;
             pitch_writedata <= 32'd0;
             counter <= 0;
+            data_state <= 0;
         end else begin
             state <= n_state;
             pitch_done <= n_pitch_done;
@@ -63,6 +70,7 @@ module PitchCore (
             pitch_addr <= n_pitch_addr;
             pitch_writedata <= n_pitch_writedata;
             n_counter <= counter;
+            n_data_state <= data_state;
         end 
     end
 
@@ -73,23 +81,35 @@ module PitchCore (
         pitch_write = n_pitch_write;
         pitch_addr <= n_pitch_addr;
         pitch_writedata <= n_pitch_writedata;
+        counter = n_counter;
+        data_state = n_data_state;
         case (state)
             IDLE: begin
                 if (pitch_start) begin
                     n_state = READ_SDRAM;
                     n_pitch_read = 1;
+                    n_pitch_addr = pitch_select[0];
                 end
             end
             READ_SDRAM: begin
-                if (pitch_sdram_finished == 1) begin
-                    if (counter == 1) begin
-                        data_length = pitch_readdata;
+                case (data_state)
+                    READ_HEADER: begin
+                        if (pitch_sdram_finished == 1) begin
+                            data_length = pitch_readdata;
+                        end
                     end
-                    else if (counter < data_length) begin
-                        left_data = pitch_readdata[31:16];
-                        right_data = pitch_readdata[15:0];
+                    READ_DATA: begin
+                        if (pitch_sdram_finished == 1) begin
+                            n_counter = counter + 1;
+                            left_data[counter] = pitch_readdata[31:16];
+                            right_data[counter] = pitch_readdata[15:0];
+                            if (counter == 255) begin
+                                n_counter = 0;
+                                n_state = OLA_COMPUTE;
+                            end
+                        end
                     end
-                end
+                endcase
             end 
             WRITE_SDRAM: begin
 

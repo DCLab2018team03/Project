@@ -4,7 +4,7 @@
 // remember to modify the hanning coefficients below
 parameter WindowSize = 512; 
 
-// hanning window parameter 0~512
+// hanning window parameter 0~511
 // format: unsigned, the first bit is preserverd (in case they are used to be signed),
 //         the remaining represents the floating point of the coefficients
 //         (no precise 1 occurs, so it's OK not to store the int part)
