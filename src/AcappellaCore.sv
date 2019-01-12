@@ -29,8 +29,15 @@ module AcappellaCore (
 	output logic        new_sdram_controller_0_s1_write_n,                //                   .write_n
 	input  logic [31:0] new_sdram_controller_0_s1_readdata,               //                   .readdata
 	input  logic        new_sdram_controller_0_s1_readdatavalid,          //                   .readdatavalid
-	input  logic        new_sdram_controller_0_s1_waitrequest             //                   .waitrequest
-
+	input  logic        new_sdram_controller_0_s1_waitrequest,             //                   .waitrequest
+    // SRAM
+    inout  [15:0] SRAM_DQ,
+    output [19:0] SRAM_ADDR,
+    output SRAM_WE_N,
+    output SRAM_CE_N,
+    output SRAM_OE_N,
+    output SRAM_LB_N,
+    output SRAM_UB_N
 );
     logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
@@ -96,7 +103,15 @@ module AcappellaCore (
         .pitch_readdata(pitch_readdata),
         .pitch_write(pitch_write),
         .pitch_writedata(pitch_writedata),
-        .pitch_sdram_finished(pitch_sdram_finished)
+        .pitch_sdram_finished(pitch_sdram_finished),
+        // To SRAM
+        .SRAM_DQ(SRAM_DQ),
+        .SRAM_ADDR(SRAM_ADDR),
+        .SRAM_WE_N(SRAM_WE_N),
+        .SRAM_CE_N(SRAM_CE_N),
+        .SRAM_OE_N(SRAM_OE_N),
+        .SRAM_LB_N(SRAM_LB_N),
+        .SRAM_UB_N(SRAM_UB_N)
     );
 
     logic record_start, record_pause, record_stop, record_done;

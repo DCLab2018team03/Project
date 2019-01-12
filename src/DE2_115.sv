@@ -307,7 +307,15 @@ module DE2_115 (
         .new_sdram_controller_0_s1_write_n         (new_sdram_controller_0_s1_write_n),
         .new_sdram_controller_0_s1_readdata        (new_sdram_controller_0_s1_readdata),
         .new_sdram_controller_0_s1_readdatavalid   (new_sdram_controller_0_s1_readdatavalid),
-        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest)
+        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest),
+        // SRAM
+        .SRAM_DQ(SRAM_DQ),
+        .SRAM_ADDR(SRAM_ADDR),
+        .SRAM_WE_N(SRAM_WE_N),
+        .SRAM_CE_N(SRAM_CE_N),
+        .SRAM_OE_N(SRAM_OE_N),
+        .SRAM_LB_N(SRAM_LB_N),
+        .SRAM_UB_N(SRAM_UB_N)
 	);
 
     Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));

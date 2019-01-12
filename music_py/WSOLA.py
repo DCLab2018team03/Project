@@ -1,13 +1,14 @@
 import scipy.io.wavfile as wav
 import numpy as np
 
-def ola (data, s, N, H_a):
+def ola (data, s, N, H_s):
     L = len(data)
-    H_s = int (s*H_a)
-    x = np.array( [data[i:i+N] for i in range(0,L-N,H_a)] ) 
-    Hann_window = np.array([[0.5*(1-np.cos( 2*np.pi* (i+N//2) / (N-1) ))]*2 for i in range(-N//2, N//2)])
+    H_a = int(H_s / s)
 
-    new_data = np.zeros(((H_s*len(x)+N-H_s),2))
+    x = np.array( [data[i:i+N] for i in range(0,L-N,H_a)] ) 
+    Hann_window = np.array([0.5*(1-np.cos( 2*np.pi* (i+N//2) / (N-1) )) for i in range(-N//2, N//2)])
+    
+    new_data = np.zeros(H_s*len(x)+N-H_s)
     for i in range(0, len(x)):
         new_data[i*H_s:i*H_s+N] += x[i] * Hann_window
     
@@ -62,10 +63,13 @@ s = 1.3 # stretching factor
 N = 1024 # window_size
 H_s = N//2 # original shift
 tolerance = N//2
-#new_data = ola(ori_data, s, N, H_a)
 
 left  = wsola (ori_data[:,0], s, N, H_s, tolerance)
 right = wsola (ori_data[:,1], s, N, H_s, tolerance)
+'''
+left  = ola (ori_data[:,0], s, N, H_s)
+right = ola (ori_data[:,1], s, N, H_s)
+'''
 new_data = np.zeros( (len(left), 2) , dtype = 'int16')
 new_data[:,0] = left
 new_data[:,1] = right
