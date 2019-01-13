@@ -78,6 +78,7 @@ module PitchCore (
     logic [22:0] n_pitch_addr;
     logic [31:0] n_pitch_writedata;
 
+    logic [15:0] temp_H_a;
     logic [12:0] H_a; // = H_s * speed, use H_a[12:3] to discard floating point
     logic [22:0] data_length;
     logic [22:0] frame_counter, n_frame_counter; // iterate frames (0~)
@@ -163,7 +164,8 @@ module PitchCore (
                     n_pitch_addr = pitch_select [0];
                     n_SRAM_ADDR = 0;
                     n_sramRW = 0;
-                    H_a = H_s * pitch_speed;
+                    temp_H_a = H_s * pitch_speed; 
+                    H_a = temp_H_a >> 3;
                     n_frame_counter = 0;
                     n_data_length_counter = 0;
                     n_data_counter = 0;
@@ -288,6 +290,7 @@ module PitchCore (
                         end
                         else begin
                             n_state = RESAMPLE;
+                            n_pitch_addr = pitch_select[0] + 1;
                             if (pitch_speed >= 4'b1000) begin
                                 n_resample_address = {pitch_select[1], 3'b000};
                             end
@@ -319,7 +322,7 @@ module PitchCore (
                         n_data_counter = data_counter + 1;
                         if (data_counter == WindowSize - 1) begin
                             n_sramRW = 0;
-                            n_SRAM_ADDR = SRAM_ADDR - WindowSize + 1;
+                            n_SRAM_ADDR = SRAM_ADDR - WindowSize;
                             n_data_counter = 0;
                             n_state = OLA_COMPUTE;
                         end
@@ -364,13 +367,13 @@ module PitchCore (
                         n_state = CROSS_CORRELATION;
                         n_data_counter = 0;
                         n_channelLR = 1;
-                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 3 - H_s;
+                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 2 - H_s;
                     end
                     else begin
                         n_state = APPLY_WINDOW;
                         n_data_counter = 0;
                         n_channelLR = 0;
-                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 1 - H_s;
+                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - H_s;
                     end
                 end
             end
@@ -390,7 +393,7 @@ module PitchCore (
                         if (data_counter == HalfWindowSize - 1) begin
                             n_state = WRITE_SDRAM;
                             n_pitch_addr = pitch_select[1] + 1;
-                            n_SRAM_ADDR = SRAM_ADDR - WindowSize - WindowSize + 1;
+                            n_SRAM_ADDR = SRAM_ADDR - WindowSize - WindowSize;
                             n_data_counter = 0;
                         end
                     end
@@ -410,7 +413,7 @@ module PitchCore (
                         if (data_counter == WindowSize-1) begin
                             n_data_counter = 0;
                             n_state = WRITE_SDRAM;
-                            n_pitch_addr = pitch_select[1] + HalfWindowSize*frame_counter + 1;
+                            n_pitch_addr = pitch_select[1] + 1 + HalfWindowSize*frame_counter;
                         end
                     end
                 end
