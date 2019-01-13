@@ -3,7 +3,7 @@
 // _select is an "address array"
 // 0 is the storage address, and others are target address.
 
-// mode is either time-stretch or pitch-shift
+// mode is either time-stretch (0) or pitch-shift (1)
 // speed is the required ratio of each of them
 
 // Communicate with SDRAM by read, write.
@@ -59,11 +59,16 @@ module PitchCore (
     localparam READ_SDRAM = 1;
     localparam WRITE_SDRAM = 2;
     localparam APPLY_WINDOW = 3;
-    localparam OLA_COMPUTE = 4;
-    localparam RESAMPLE = 5; // only use when pitch-shift
+    localparam CROSS_CORRELATION = 4;
+    localparam OLA_COMPUTE = 5;
+    localparam RESAMPLE = 6; // only use when pitch-shift
+    localparam PREDICT_NEXT_FRAME = 7;
 
     localparam READ_HEADER = 0;
     localparam READ_DATA   = 1;
+
+    localparam RESAMPLE_READ = 0;
+    localparam RESAMPLE_WRITE = 1;
 
     logic [3:0] state, n_state;
     logic       data_state, n_data_state;
@@ -74,17 +79,19 @@ module PitchCore (
     logic [31:0] n_pitch_writedata;
 
     logic [12:0] H_a; // = H_s * speed, use H_a[12:3] to discard floating point
-    logic [31:0] data_length;
-    logic signed [15:0] left_data  [AnalysisFrameSize-1:0];
-    logic signed [15:0] right_data [AnalysisFrameSize-1:0];
-    logic signed [35:0] left_synthesis_frame  [WindowSize-1:0];
-    logic signed [35:0] right_synthesis_frame [WindowSize-1:0];
-    logic signed [15:0] left_write_data_prev  [WindowSize-1-1:0];
-    logic signed [15:0] left_write_data  [WindowSize-1-1:0];
-    logic signed [15:0] right_write_data_prev [WindowSize-1-1:0];
-    logic signed [15:0] right_write_data [WindowSize-1-1:0];
-    logic [31:0] counter, n_counter;
-    logic [9:0] data_counter, n_data_counter;
+    logic [22:0] data_length;
+    logic [31:0] counter, n_counter;           // iterate frames
+    logic [9:0] data_counter, n_data_counter;  // iterate in a frame
+    logic [10:0] correlation_counter, n_correlation_counter;
+    logic sramRW, n_sramRW;
+    logic [15:0] temp_data;
+    logic [32:0] partial_product, n_partial_product;
+    logic [31:0] resample_temp_data;
+    logic [22:0] resample_address, n_resample_address;
+    logic [15:0] predict_frame [WindowSize-1:0];
+    logic [19:0] max_correlation_index;
+    logic [32:0] max_correlation_value;
+    logic channelLR;
     integer i;
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
@@ -96,8 +103,12 @@ module PitchCore (
             pitch_writedata <= 32'd0;
             counter <= 0;
             data_counter <= 0;
+            correlation_counter <= 0;
             data_state <= 0;
             SRAM_ADDR <= 0;
+            sramRW <= 0;
+            resample_address <= 0;
+            partial_product <= 0;
         end else begin
             state <= n_state;
             pitch_done <= n_pitch_done;
@@ -107,8 +118,12 @@ module PitchCore (
             pitch_writedata <= n_pitch_writedata;
             counter <= n_counter;
             data_counter <= n_data_counter;
+            correlation_counter <= n_correlation_counter;
             data_state <= n_data_state;
             SRAM_ADDR <= n_SRAM_ADDR;
+            sramRW <= n_sramRW;
+            resample_address <= n_resample_address;
+            partial_product <= n_partial_product;
         end 
     end
 
@@ -121,70 +136,192 @@ module PitchCore (
         pitch_writedata <= n_pitch_writedata;
         counter = n_counter;
         data_counter = n_data_counter;
+        correlation_counter = n_correlation_counter;
         data_state = n_data_state;
         n_SRAM_DQ = SRAM_DQ;
         n_SRAM_ADDR = SRAM_ADDR;
         setSRAMenable(SRAM_NOT_SELECT);
+        n_sramRW = sramRW;
+        n_partial_product = partial_product;
         case (state)
             IDLE: begin
                 if (pitch_start) begin
                     n_state = READ_SDRAM;
-                    n_pitch_read = 1;
-                    n_pitch_addr = pitch_select[0];
+                    n_pitch_addr = pitch_select [0];
+                    n_SRAM_ADDR = 0;
                     H_a = H_s * speed;
+                    n_counter =  0;
+                    channelLR = 0;
                 end
             end
             READ_SDRAM: begin
-                n_pitch_addr = pitch_addr + 1;
+                n_pitch_read = 1;
+                setSRAMenable(SRAM_WRITE);
                 case (data_state)
                     READ_HEADER: begin
                         if (pitch_sdram_finished == 1) begin
-                            data_length = pitch_readdata;
+                            n_pitch_addr = pitch_addr + 1;
+                            data_length = pitch_readdata[31:9];
                             n_data_state = READ_DATA;
                         end
                     end
                     READ_DATA: begin
                         if (pitch_sdram_finished == 1) begin
-                            counter = counter + 1;
-                            left_data[counter] = pitch_readdata[31:16];
-                            right_data[counter] = pitch_readdata[15:0];
-                            if (counter == AnalysisFrameSize-1) begin
-                                n_counter = 0;
-                                n_state = APPLY_WINDOW;
-                                n_pitch_read = 0;
+                            n_pitch_addr = pitch_addr + 1;
+                            n_SRAM_ADDR = SRAM_ADDR + 1;
+                            n_SRAM_DQ = channelLR ? pitch_readdata[15:0] : pitch_readdata[31:16];
+                            if (counter == 0) begin
+                                if (pitch_addr == WindowSize + H_s) begin
+                                    n_state = APPLY_WINDOW;
+                                    n_pitch_read = 0;
+                                    n_SRAM_ADDR = 0;
+                                    n_sramRW = 0;
+                                    n_data_counter = 0;
+                                    max_correlation_index = 0;
+                                end
+                            end
+                            else begin
+                                if (pitch_addr == AnalysisFrameSize-1) begin
+                                    n_state = CROSS_CORRELATION;
+                                    n_pitch_read = 0;
+                                    n_SRAM_ADDR = SRAM_ADDR - AnalysisFrameSize + 1;
+                                    n_sramRW = 0;
+                                    n_data_counter = 0;
+                                    max_correlation_index = 0;
+                                    max_correlation_value = 0;
+                                end
                             end
                         end
                     end
                 endcase
             end 
             WRITE_SDRAM: begin
-                if (counter == 0) begin
-                    n_pitch_addr = pitch_select[1];
-                    n_pitch_write = 1;
-                    n_pitch
-                end
+                setSRAMenable(SRAM_READ);
                 n_pitch_write = 1;
-                n_pitch_addr = pitch_addr + 1; 
-                n_pitch_writedata = {left_write_data[counter], right_write_data[counter]};
-
+                if (!channelLR) begin
+                    n_pitch_writedata[31:16] = SRAM_DQ;
+                end
+                else begin
+                    n_pitch_writedata[15:0] = SRAM_DQ;
+                end
+                if (pitch_sdram_finished == 1) begin
+                    n_pitch_addr = pitch_addr + 1;
+                    n_SRAM_ADDR = SRAM_ADDR + 1;
+                    n_data_counter = data_counter + 1;                    
+                end
+                if (data_counter == WindowSize >> 1) begin
+                    if (!channelLR) begin
+                        n_state = READ_DATA;
+                        channelLR = 1;
+                    end
+                    else begin
+                        if (!pitch_mode) begin
+                            n_state = IDLE;
+                        end
+                        else begin
+                            n_state = RESAMPLE;
+                        end
+                    end
+                    n_pitch_write = 0;
+                end
             end
             APPLY_WINDOW: begin
-                for (i=0; i<WindowSize; i=i+1) begin
-                    left_synthesis_frame[i] = left_data * HANN_C[i];
-                    right_synthesis_frame[i] = right_data * HANN_C[i];
+                if (!sramRW) begin
+                    setSRAMenable(SRAM_READ);
+                    temp_data = SRAM_DQ;
+                    n_sramRW = 1;
                 end
-                n_state = OLA_COMPUTE;
+                else begin
+                    setSRAMenable(SRAM_WRITE);
+                    n_SRAM_DQ = temp_data * HANN_C[data_counter];
+                    n_SRAM_ADDR = SRAM_ADDR + 1;
+                    n_data_counter = data_counter + 1;
+                    n_sramRW = 0;
+                    if (data_counter == WindowSize) begin
+                        sramRW = 0;
+                        n_SRAM_ADDR = SRAM_ADDR - WindowSize >> 1 + 1;
+                        n_data_counter = 0;
+                        n_state = OLA_COMPUTE;
+                    end
+                end
+            end
+            CROSS_CORRELATION: begin
+                setSRAMenable(SRAM_READ);
+                temp_data = SRAM_DQ;
+                n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter]) >>> 10;
+                n_data_counter = data_counter + 1;
+                n_SRAM_ADDR = SRAM_ADDR + 1;
+                if (data_counter == WindowSize - 1) begin
+                    n_SRAM_ADDR = SRAM_ADDR + 2 - WindowSize;
+                    n_correlation_counter = correlation_counter + 1;
+                    n_partial_product = 0;
+                    if (partial_product > max_correlation_value) begin
+                        max_correlation_value = partial_product;
+                        max_correlation_index = data_counter;
+                    end
+                    if(correlation_counter == WindowSize) begin
+                        n_state = PREDICT_NEXT_FRAME;
+                        n_SRAM_ADDR = SRAM_ADDR - WindowSize - tolerance << 2 + max_correlation_index + 1;
+                    end
+                end
+            end
+            PREDICT_NEXT_FRAME: begin
+                setSRAMenable(SRAM_READ);
+                predict_frame[data_counter] = SRAM_DQ * HANN_C[data_counter];
+                n_data_counter = data_counter + 1;
+                n_SRAM_ADDR = SRAM_ADDR + 1;
+                if (data_counter == WindowSize-1) begin
+                    n_state = APPLY_WINDOW;
+                    n_data_counter = 0;
+                    n_SRAM_ADDR = SRAM_ADDR - WindowSize + 1 - H_s;
+                end
             end
             OLA_COMPUTE: begin
-                for (i=0; i<WindowSize; i=i+1) begin
-                    left_write_data[i] = left_synthesis_frame[i][35:20];
-                    right_write_data[i] = right_synthesis_frame[i][35:20];
+                if (counter == 0) begin
+                    n_state = WRITE_SDRAM;
+                    n_pitch_addr = pitch_select[1] + 1;
                 end
-                n_state = WRITE_SDRAM;
-                n_counter = 0;
+                else begin
+                    if (!sramRW) begin
+                        setSRAMenable(SRAM_READ);
+                        temp_data = SRAM_DQ;
+                        n_sramRW = 1;
+                    end
+                    else begin
+                        setSRAMenable(SRAM_WRITE);
+                        n_SRAM_DQ = temp_data * HANN_C[data_counter];
+                        n_SRAM_ADDR = SRAM_ADDR + 1;
+                        n_data_counter = data_counter + 1;
+                        n_sramRW = 0;
+                        if (data_counter == WindowSize-1) begin
+                            sramRW = 0;
+                            n_data_counter = 0;
+                            n_state = OLA_COMPUTE;
+                        end
+                    end
+                end
             end
             RESAMPLE: begin
-
+                case (data_state) 
+                    RESAMPLE_READ: begin
+                        n_pitch_read = 1;
+                        if (pitch_sdram_finished) begin
+                            resample_temp_data = pitch_readdata;
+                            n_data_state = RESAMPLE_WRITE;
+                            n_pitch_read = 0;
+                            n_resample_address = resample_address + speed;
+                        end
+                    end
+                    RESAMPLE_WRITE: begin
+                        n_pitch_write = 1;
+                        n_pitch_writedata = resample_temp_data;
+                        if (pitch_sdram_finished) begin
+                            n_data_state = RESAMPLE_READ;
+                            n_pitch_write = 0;
+                            n_pitch_addr = pitch_addr + resample_address[22:3];
+                        end
+                    end
+                endcase
             end
         endcase
     end
