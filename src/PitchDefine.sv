@@ -2,10 +2,11 @@
 `define _PITCH_DEFINE_SV_
 // window size for time-stretching and pitch-shifting, if you change the window size,
 // remember to modify the hanning coefficients below
-parameter [9:0] WindowSize = 10'd1024;
-parameter [8:0] H_s = 9'd512;
-parameter [8:0] tolerance = 9'd512;
-parameter [11:0] AnalysisFrameSize = 12'd2560;
+parameter  WindowSize = 1024;
+parameter  HalfWindowSize = 512;
+parameter  H_s = 512;
+parameter  tolerance = 512;
+parameter  AnalysisFrameSize = 2560;
 // hanning window parameter 0~511 (to use 512~1023, just call the symetric part)
 // format: unsigned, the first bit is preserverd (in case they are used to be signed),
 //         the remaining represents the floating point of the coefficients
