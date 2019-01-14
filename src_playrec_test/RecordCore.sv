@@ -39,9 +39,11 @@ module RecordCore (
     localparam IDLE  = 2'b00;
     localparam REC   = 2'b01;
     localparam WRITE = 2'b10;
+    localparam WRONG = 2'b11;
 
     logic [31:0] audio_data, n_audio_data;
     logic [22:0] addr, n_addr;
+    logic counter, n_counter;
 
     assign record_addr = addr;
     assign record_writedata = audio_data;
@@ -51,10 +53,12 @@ module RecordCore (
             state <= IDLE;
             audio_data <= 0;
             addr <= 0;
+            counter <= 0;
         end else begin
             state <= n_state;
             audio_data <= n_audio_data;
             addr <= n_addr;
+            counter <= n_counter;
         end
     end
     assign record_done = 0;
@@ -69,31 +73,40 @@ module RecordCore (
         record_audio_ready = 0;
         record_write = 0;
 
+        n_counter = counter;
+
         case(state)
             IDLE: begin
                 if (record_start) begin
                     n_state = REC;
+                    n_counter = 0;
                 end
                 n_addr = 0;
             end
             REC: begin
-                if (!record_start) begin
-                    n_state = IDLE;
-                end
                 record_audio_ready = 1;
                 n_audio_data = record_audio_data;
                 if (record_audio_valid) begin
-                    n_state = WRITE;
+                    if (counter == 1) begin
+                        n_state = WRITE;
+                    end
+                    else begin
+                        n_counter = 1;
+                    end
                 end
-            end
-            WRITE: begin
                 if (!record_start) begin
                     n_state = IDLE;
                 end
+            end
+            WRITE: begin
                 record_write = 1;
                 if (record_sdram_finished) begin
                     n_state = REC;
+                    n_counter = 0;
                     n_addr = addr + 1;
+                end
+                if (!record_start) begin
+                    n_state = IDLE;
                 end
             end
             default: n_state = state;
