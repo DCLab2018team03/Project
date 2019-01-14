@@ -55,11 +55,11 @@ module ControlCore (
     assign pitch_select[1] = 0;
     assign pitch_mode = 0;
     assign pitch_speed = 0;
-    //assign record_select[0] = 0;
-    //assign record_select[1] = 0;
+    assign record_select[0] = 0;
+    assign record_select[1] = 0;
     assign record_pause = 0;
     //assign record_stop = 0;
-    //assign play_select = 0;
+    assign play_select = 0;
     assign play_pause = 0;
     assign play_stop = 0;
 
