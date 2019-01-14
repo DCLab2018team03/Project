@@ -3,6 +3,7 @@ module AcappellaCore (
     input  logic         i_rst,
     input [3:0] KEY,
     input [17:0] SW,
+	output logic [8:0] LEDG,
     // avalon_audio_slave
     // avalon_left_channel_source
     output logic from_adc_left_channel_ready,
@@ -29,15 +30,8 @@ module AcappellaCore (
 	output logic        new_sdram_controller_0_s1_write_n,                //                   .write_n
 	input  logic [31:0] new_sdram_controller_0_s1_readdata,               //                   .readdata
 	input  logic        new_sdram_controller_0_s1_readdatavalid,          //                   .readdatavalid
-	input  logic        new_sdram_controller_0_s1_waitrequest,             //                   .waitrequest
-    // SRAM
-    inout  [15:0] SRAM_DQ,
-    output [19:0] SRAM_ADDR,
-    output SRAM_WE_N,
-    output SRAM_CE_N,
-    output SRAM_OE_N,
-    output SRAM_LB_N,
-    output SRAM_UB_N
+	input  logic        new_sdram_controller_0_s1_waitrequest             //                   .waitrequest
+
 );
     logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
@@ -52,22 +46,28 @@ module AcappellaCore (
         .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),
         .loaddata_writedata(loaddata_writedata),
-        .loaddata_sdram_finished(loaddata_sdram_finished),
+        .loaddata_sdram_finished(loaddata_sdram_finished)
 
         // To RS232
     );
 
     logic mix_start, mix_done;
     logic [22:0] mix_select [4:0]; 
+    logic [2:0] mix_num;
     logic mix_read, mix_write, mix_sdram_finished;
     logic [22:0] mix_addr;
     logic [31:0] mix_readdata, mix_writedata;
+
+    logic mix_audio_valid, mix_audio_ready;
+    logic [31:0] mix_audio_data;
+
     MixCore mixer(
         .i_clk(i_clk),
         .i_rst(i_rst),
         // To controller
         .mix_start(mix_start),
         .mix_select(mix_select),
+        ,mix_num(mix_num)
         .mix_done(mix_done),
 
         // To SDRAM
@@ -77,6 +77,11 @@ module AcappellaCore (
         .mix_write(mix_write),
         .mix_writedata(mix_writedata),
         .mix_sdram_finished(mix_sdram_finished)
+
+        // To Audio
+        .play_audio_valid(mix_audio_valid),
+        .play_audio_data(mix_audio_data),
+        .play_audio_ready(mix_audio_ready)
     );
     
     logic pitch_start, pitch_done;
@@ -103,15 +108,7 @@ module AcappellaCore (
         .pitch_readdata(pitch_readdata),
         .pitch_write(pitch_write),
         .pitch_writedata(pitch_writedata),
-        .pitch_sdram_finished(pitch_sdram_finished),
-        // To SRAM
-        .SRAM_DQ(SRAM_DQ),
-        .SRAM_ADDR(SRAM_ADDR),
-        .SRAM_WE_N(SRAM_WE_N),
-        .SRAM_CE_N(SRAM_CE_N),
-        .SRAM_OE_N(SRAM_OE_N),
-        .SRAM_LB_N(SRAM_LB_N),
-        .SRAM_UB_N(SRAM_UB_N)
+        .pitch_sdram_finished(pitch_sdram_finished)
     );
 
     logic record_start, record_pause, record_stop, record_done;
@@ -122,7 +119,7 @@ module AcappellaCore (
     logic [31:0] record_readdata, record_writedata;
 
     logic record_audio_valid, record_audio_ready;
-    logic [15:0] record_audio_data;
+    logic [31:0] record_audio_data;
     RecordCore recorder(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -179,6 +176,8 @@ module AcappellaCore (
         .play_audio_ready(play_audio_ready)
     );
 
+    logic [3:0] control_mode;
+
     ControlCore controller(
         .i_clk(i_clk),
         .i_rst(i_rst),
@@ -186,10 +185,13 @@ module AcappellaCore (
         .KEY(KEY),
         .SW(SW),
 
+        .control_mode(control_mode),
+
         .loaddata_done(loaddata_done),
 
         .mix_start(mix_start),
         .mix_select(mix_select),
+        .mix_num(mix_num)
         .mix_done(mix_done),
 
         .pitch_start(pitch_start),
@@ -218,10 +220,56 @@ module AcappellaCore (
 
     // WARNING: all input signal should be set to 0 if not used !!!!!!!
     // Maybe use MUX is better. need some discusssion 
-    assign sdram_read = mix_read | pitch_read | record_read | play_read;
-    assign sdram_write = loaddata_write | mix_write | pitch_write | record_write;
-    assign sdram_addr = loaddata_addr | mix_addr | pitch_addr | record_addr | play_addr;
-    assign sdram_writedata = loaddata_writedata | mix_writedata | pitch_writedata | record_writedata;
+
+
+    // MUX version
+    always_comb begin
+
+        sdram_read = 0;
+        sdram_write = 0;
+        sdram_addr = 0;
+        sdram_writedata = 0;
+        bus_audio_valid = 0;
+        bus_audio_data = 0;
+        bus_audio_ready = 0;
+
+
+        case(control_mode)
+            control_REC: begin
+                sdram_write = record_write;
+                sdram_addr = record_addr;
+                sdram_writedata = record_writedata;
+            end
+            control_PLAY: begin
+                sdram_read = play_read;
+                sdram_addr = play_addr;
+                bus_audio_valid = play_audio_valid;
+                bus_audio_data = play_audio_data;
+                bus_audio_ready = play_audio_ready;
+            end
+            control_MIX: begin
+                sdram_read = mix_read;
+                sdram_write = mix_write;
+                sdram_addr = mix_addr;
+                sdram_writedata = mix_writedata;
+                bus_audio_valid = mix_audio_valid;
+                bus_audio_data = mix_audio_data;
+                bus_audio_ready = mix_audio_ready;
+            end
+            control_PITCH: begin
+                sdram_read = pitch_read;
+                sdram_write = pitch_write;
+                sdram_addr = pitch_addr;
+                sdram_writedata = pitch_writedata;
+            end
+            default:
+        endcase
+    end
+
+    //assign sdram_read = mix_read | pitch_read | record_read | play_read;
+    //assign sdram_write = loaddata_write | mix_write | pitch_write | record_write;
+    //assign sdram_addr = loaddata_addr | mix_addr | pitch_addr | record_addr | play_addr;
+    //assign sdram_writedata = loaddata_writedata | mix_writedata | pitch_writedata | record_writedata;
 
     assign mix_readdata    = sdram_readdata;
     assign pitch_readdata  = sdram_readdata;
@@ -233,6 +281,9 @@ module AcappellaCore (
     assign pitch_sdram_finished    = sdram_finished;
     assign record_sdram_finished   = sdram_finished;
     assign play_sdram_finished     = sdram_finished;
+
+    logic bus_audio_valid, bus_audio_ready;
+    logic [31:0] bus_audio_data;
 
     AudioBus audiobus(
         .i_clk(i_clk),
@@ -259,15 +310,16 @@ module AcappellaCore (
         .record_audio_data(record_audio_data),
         .record_audio_valid(record_audio_valid),
 
-        .play_audio_valid(play_audio_valid),
-        .play_audio_data(play_audio_data),
-        .play_audio_ready(play_audio_ready)
+        .play_audio_valid(bus_audio_valid),
+        .play_audio_data(bus_audio_data),
+        .play_audio_ready(bus_audio_ready),
+        .debug(debug)
     );
-    
+
     SDRAMBus sdrambus(
         .i_clk(i_clk),
         .i_rst(i_rst),
-        
+
         .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
         .new_sdram_controller_0_s1_byteenable_n    (new_sdram_controller_0_s1_byteenable_n),
         .new_sdram_controller_0_s1_chipselect      (new_sdram_controller_0_s1_chipselect),
@@ -284,6 +336,7 @@ module AcappellaCore (
         .sdram_write(sdram_write),
         .sdram_writedata(sdram_writedata),
         .sdram_finished(sdram_finished)
+        //.debug(debug)
         /*
         .loaddata_write(loaddata_write),
         .loaddata_addr(loaddata_addr),

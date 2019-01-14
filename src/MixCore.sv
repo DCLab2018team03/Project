@@ -23,7 +23,12 @@ module MixCore (
     input  [31:0] mix_readdata,
     output mix_write,
     output [31:0] mix_writedata,
-    input  mix_sdram_finished
+    input  mix_sdram_finished,
+
+    // To Audio
+    output play_audio_valid,
+    output [31:0] play_audio_data,
+    input  play_audio_ready
 );
     
 endmodule
