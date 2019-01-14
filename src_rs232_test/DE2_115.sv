@@ -179,14 +179,141 @@ module DE2_115 (
     output [7:0]  VGA_G,       // VGA Green[9:0]
     output [7:0]  VGA_B       // VGA Blue[9:0]
 );
-    // Main Module
+    /*assign SRAM_CE_N = 1'b0;
+    assign SRAM_OE_N = 1'b0;
+    assign SRAM_LB_N = 1'b0;
+    assign SRAM_UB_N = 1'b0;
+    assign HEX0 = 7'h7F;
+    assign HEX1 = 7'h7F;
+    assign HEX2 = 7'h7F;
+    assign HEX3 = 7'h7F;
+    assign HEX4 = 7'h7F;
+    assign HEX5 = 7'h7F;
+    assign HEX6 = 7'h7F;
+    assign HEX7 = 7'h7F;
+    */
+    ///////////////////////////////////////
+    // Main program
+    ///////////////////////////////////////
+
+     // Main Module
     wire rst_main;
     assign rst_main = SW[17];
-    	rsa_qsys my_qsys(
-		.clk_clk(CLOCK_50),
-		.reset_reset_n(KEY[0]),
-		.uart_0_external_connection_rxd(UART_RXD),
-		.uart_0_external_connection_txd(UART_TXD)
+    wire            w_mem_read;
+    wire            w_mem_write;
+    wire    [31:0]  w_mem_addr;
+    wire    [15:0]  w_mem_data;
+    wire            w_mem_done;
+	// wire between I2S and AudioCore
+	wire            w_adc_left_ready;
+	wire    [15:0]  w_adc_left_data;
+	wire            w_adc_left_valid;
+	wire            w_dac_left_ready;
+	wire    [15:0]  w_dac_left_data;
+	wire            w_dac_left_valid;
+	wire            w_adc_right_ready;
+	wire    [15:0]  w_adc_right_data;
+	wire            w_adc_right_valid;
+	wire            w_dac_right_ready;
+	wire    [15:0]  w_dac_right_data;
+	wire            w_dac_right_valid;
+	wire    [15:0]  w_input_event;
+    logic           w_stop_signal, n_stop_signal;
+
+    wire    [22:0]  new_sdram_controller_0_s1_address;
+    wire    [3:0]   new_sdram_controller_0_s1_byteenable_n;
+    wire            new_sdram_controller_0_s1_chipselect;
+    wire    [31:0]  new_sdram_controller_0_s1_writedata;
+    wire            new_sdram_controller_0_s1_read_n;
+    wire            new_sdram_controller_0_s1_write_n;
+    wire    [31:0]  new_sdram_controller_0_s1_readdata;
+    wire            new_sdram_controller_0_s1_readdatavalid;
+    wire            new_sdram_controller_0_s1_waitrequest;
+    logic [3:0] KEY_debounced;
+
+    Total total(
+        .audio_0_external_interface_ADCDAT(AUD_ADCDAT),   // audio_0_external_interface.ADCDAT
+		.audio_0_external_interface_ADCLRCK(AUD_ADCLRCK), //                           .ADCLRCK
+		.audio_0_external_interface_BCLK(AUD_BCLK),       //                           .BCLK
+		.audio_0_external_interface_DACDAT(AUD_DACDAT),   //                           .DACDAT
+		.audio_0_external_interface_DACLRCK(AUD_DACLRCK), //                           .DACLRCK
+        .audio_and_video_config_0_external_interface_SDAT(I2C_SDAT), // audio_and_video_config_0_external_interface.SDAT
+		.audio_and_video_config_0_external_interface_SCLK(I2C_SCLK), //                                            .SCLK
+		.clk_clk(CLOCK_50),                                          //                                          clk.clk
+		.reset_reset_n(~rst_main),                                   //                                    reset.reset_n
+        .audio_0_avalon_left_channel_sink_data  (w_dac_left_data),                                   //  avalon_left_channel_source.ready
+		.audio_0_avalon_left_channel_sink_valid   (w_dac_left_valid),                                   //                            .data
+		.audio_0_avalon_left_channel_sink_ready  (w_dac_left_ready),                                   //                            .valid
+		.audio_0_avalon_left_channel_source_ready (w_adc_left_ready),                                   // avalon_right_channel_source.ready
+		.audio_0_avalon_left_channel_source_data  (w_adc_left_data),                                   //                            .data
+		.audio_0_avalon_left_channel_source_valid (w_adc_left_valid),                                   //                            .valid
+		.audio_0_avalon_right_channel_sink_data     (w_dac_right_data),                                   //    avalon_left_channel_sink.data
+		.audio_0_avalon_right_channel_sink_valid    (w_dac_right_valid),                                   //                            .valid
+		.audio_0_avalon_right_channel_sink_ready    (w_dac_right_ready),                                   //                            .ready
+		.audio_0_avalon_right_channel_source_ready    (w_adc_right_ready),                                   //   avalon_right_channel_sink.data
+		.audio_0_avalon_right_channel_source_data   (w_adc_right_data),                                   //                            .valid
+		.audio_0_avalon_right_channel_source_valid   (w_adc_right_valid),                                 //                            .ready
+        .audio_pll_0_audio_clk_clk      (AUD_XCK),
+        .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
+        .new_sdram_controller_0_s1_byteenable_n    (new_sdram_controller_0_s1_byteenable_n),
+        .new_sdram_controller_0_s1_chipselect      (new_sdram_controller_0_s1_chipselect),
+        .new_sdram_controller_0_s1_writedata       (new_sdram_controller_0_s1_writedata),
+        .new_sdram_controller_0_s1_read_n          (new_sdram_controller_0_s1_read_n),
+        .new_sdram_controller_0_s1_write_n         (new_sdram_controller_0_s1_write_n),
+        .new_sdram_controller_0_s1_readdata        (new_sdram_controller_0_s1_readdata),
+        .new_sdram_controller_0_s1_readdatavalid   (new_sdram_controller_0_s1_readdatavalid),
+        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest),
+        .new_sdram_controller_0_wire_addr          (DRAM_ADDR),
+        .new_sdram_controller_0_wire_ba            (DRAM_BA),
+        .new_sdram_controller_0_wire_cas_n         (DRAM_CAS_N),
+        .new_sdram_controller_0_wire_cke           (DRAM_CKE),
+        .new_sdram_controller_0_wire_cs_n          (DRAM_CS_N),
+        .new_sdram_controller_0_wire_dq            (DRAM_DQ),
+        .new_sdram_controller_0_wire_dqm           (DRAM_DQM),
+        .new_sdram_controller_0_wire_ras_n         (DRAM_RAS_N),
+        .new_sdram_controller_0_wire_we_n          (DRAM_WE_N),
+        .sys_sdram_pll_0_sdram_clk_clk             (DRAM_CLK)
+    );
+
+	AcappellaCore acappellacore(
+		.i_clk(CLOCK_50),
+		.i_rst(rst_main),
+		// Input
+		.KEY(KEY_debounced),
+        .SW(SW),
+		  .LEDG(LEDG),
+        // avalon_audio_slave
+        // avalon_left_channel_source
+		.from_adc_left_channel_ready(w_adc_left_ready),
+        .from_adc_left_channel_data(w_adc_left_data),
+        .from_adc_left_channel_valid(w_adc_left_valid),
+        // avalon_right_channel_source
+        .from_adc_right_channel_ready(w_adc_right_ready),
+        .from_adc_right_channel_data(w_adc_right_data),
+        .from_adc_right_channel_valid(w_adc_right_valid),
+        // avalon_left_channel_sink
+        .to_dac_left_channel_data(w_dac_left_data),
+        .to_dac_left_channel_valid(w_dac_left_valid),
+        .to_dac_left_channel_ready(w_dac_left_ready),
+        // avalon_left_channel_sink
+        .to_dac_right_channel_data(w_dac_right_data),
+        .to_dac_right_channel_valid(w_dac_right_valid),
+        .to_dac_right_channel_ready(w_dac_right_ready),
+        // SDRAM
+        .new_sdram_controller_0_s1_address         (new_sdram_controller_0_s1_address),
+        .new_sdram_controller_0_s1_byteenable_n    (new_sdram_controller_0_s1_byteenable_n),
+        .new_sdram_controller_0_s1_chipselect      (new_sdram_controller_0_s1_chipselect),
+        .new_sdram_controller_0_s1_writedata       (new_sdram_controller_0_s1_writedata),
+        .new_sdram_controller_0_s1_read_n          (new_sdram_controller_0_s1_read_n),
+        .new_sdram_controller_0_s1_write_n         (new_sdram_controller_0_s1_write_n),
+        .new_sdram_controller_0_s1_readdata        (new_sdram_controller_0_s1_readdata),
+        .new_sdram_controller_0_s1_readdatavalid   (new_sdram_controller_0_s1_readdatavalid),
+        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest)
 	);
+
+    Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
+    Debounce deb1(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
+    Debounce deb2(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
+    Debounce deb3(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]));
     
 endmodule

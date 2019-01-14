@@ -1,6 +1,8 @@
-module Rsa256Wrapper(
+module LoadCore(
     input avm_rst,
     input avm_clk,
+    output loaddata_done;
+    // rs232
     output [4:0] avm_address,
     output avm_read,
     input [31:0] avm_readdata,
@@ -8,12 +10,10 @@ module Rsa256Wrapper(
     output [31:0] avm_writedata,
     input avm_waitrequest,
     // sdram
-    output  logic [22:0] sdram_addr,
-    output  logic sdram_read,
-    input logic [31:0] sdram_readdata,
-    output  logic sdram_write,
-    output  logic [31:0] sdram_writedata,
-    input logic sdram_finished
+    output  logic [22:0] loaddata_addr, //loaddata_addr
+    output  logic loaddata_write, //loaddata_write
+    output  logic [31:0] loaddata_writedata, //loaddata_writedata
+    input logic loaddata_sdram_finished //loaddata_sdram_finished
 );
     localparam RX_BASE     = 0*4;
     localparam TX_BASE     = 1*4;
@@ -56,10 +56,9 @@ module Rsa256Wrapper(
     assign avm_writedata = writedata;
 
     // sdram
-    output  logic [22:0] n_sdram_addr;
-    output  logic n_sdram_read;
-    output  logic n_sdram_write;
-    output  logic [31:0] n_sdram_writedata;
+    output  logic [22:0] n_loaddata_addr;
+    output  logic n_loaddata_write;
+    output  logic [31:0] n_loaddata_writedata;
 
     task Wait;
         begin
@@ -96,10 +95,9 @@ module Rsa256Wrapper(
         address_w = address_r;
         header_w = header_r;
         data_w = data_r;
-        n_sdram_addr = sdram_addr;
-        n_sdram_read = sdram_read;
-        n_sdram_write = sdram_write;
-        n_sdram_writedata = sdram_writedata;
+        n_loaddata_addr = loaddata_addr;
+        n_loaddata_write = loaddata_write;
+        n_loaddata_writedata = loaddata_writedata;
 		case(state_r)		
 			QUERY_RX: begin
                 if(!avm_waitrequest && avm_read_r) begin
@@ -148,43 +146,43 @@ module Rsa256Wrapper(
                 end
 			end						
 			STORE: begin
-				n_sdram_write = 1'b1;
-                n_sdram_addr = address_r[22:0];
+				n_loaddata_write = 1'b1;
+                n_loaddata_addr = address_r[22:0];
                 case (store_state_r) 
                     STORE_HEADER: begin
-                        n_sdram_writedata = header_r;
-                        if (sdram_finished) begin
+                        n_loaddata_writedata = header_r;
+                        if (loaddata_sdram_finished) begin
                             state_w = QUERY_RX;
                             store_state_w = STORE_DATA;
                             address_w = address_r + 1;
-                            n_sdram_write = 1'b0;
+                            n_loaddata_write = 1'b0;
                         end
                     end
                     STORE_DATA: begin
-                        n_sdram_writedata = data_r;
+                        n_loaddata_writedata = data_r;
                         store_counter_w = store_counter_r + 1;
-                        if (sdram_finished) begin
+                        if (loaddata_sdram_finished) begin
                             if (store_counter_r == cycle) begin
-                                avm_address_r <= STATUS_BASE;
-                                avm_read_r <= 1;
-                                avm_write_r <= 0;
-                                state_r <= QUERY_RX;
-                                data_state_r <= READ_HEADER;
-                                store_state_r <= STORE_HEADER;
-                                bytes_counter_r <= 0;
-                                store_counter_r <= 0;
-                                address_r <= 32'd0;
-                                header_r <= 32'd0;
-                                data_r <= 32'd0;
-                                sdram_addr <= 23'd0;
-                                sdram_read <= 0;
-                                sdram_write <= 0;
-                                sdram_writedata <= 32'd0;
+                                avm_address_r = STATUS_BASE;
+                                avm_read_r = 1;
+                                avm_write_r = 0;
+                                state_r = QUERY_RX;
+                                data_state_r = READ_HEADER;
+                                store_state_r = STORE_HEADER;
+                                bytes_counter_r = 0;
+                                store_counter_r = 0;
+                                address_r = 32'd0;
+                                header_r = 32'd0;
+                                data_r = 32'd0;
+                                loaddata_addr = 23'd0;
+                                loaddata_write = 0;
+                                loaddata_writedata = 32'd0;
+                                loaddata_done = 1;
                             end
                             else begin
                                 state_w = QUERY_RX;
                                 address_w = address_r + 1;
-                                n_sdram_write = 1'b0;
+                                n_loaddata_write = 1'b0;
                             end
                         end
                     end
@@ -254,10 +252,9 @@ module Rsa256Wrapper(
             address_r <= 32'd0;
             header_r <= 32'd0;
             data_r <= 32'd0;
-            sdram_addr <= 23'd0;
-            sdram_read <= 0;
-            sdram_write <= 0;
-            sdram_writedata <= 32'd0;
+            loaddata_addr <= 23'd0;
+            loaddata_write <= 0;
+            loaddata_writedata <= 32'd0;
         end else begin
             avm_address_r <= avm_address_w;
             avm_read_r <= avm_read_w;
@@ -270,10 +267,9 @@ module Rsa256Wrapper(
             address_r <= address_w;
             header_r <= header_w;
             data_r <= data_w;
-            sdram_addr <= n_sdram_addr;
-            sdram_read <= n_sdram_read;
-            sdram_write <= n_sdram_write;
-            sdram_writedata <= n_sdram_writedata;
+            loaddata_addr <= n_loaddata_addr;
+            loaddata_write <= n_loaddata_write;
+            loaddata_writedata <= n_loaddata_writedata;
         end
     end
 
