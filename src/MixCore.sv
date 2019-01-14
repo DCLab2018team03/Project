@@ -15,6 +15,7 @@ module MixCore (
     // To controller
     input  mix_start,
     input  [22:0] mix_select [4:0],
+	input  [2:0] mix_num,
     output mix_done,
 
     // To SDRAM
@@ -23,7 +24,12 @@ module MixCore (
     input  [31:0] mix_readdata,
     output mix_write,
     output [31:0] mix_writedata,
-    input  mix_sdram_finished
+    input  mix_sdram_finished,
+
+    // To Audio
+    output mix_audio_valid,
+    output [31:0] mix_audio_data,
+    input  mix_audio_ready
 );
     
 endmodule

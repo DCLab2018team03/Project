@@ -64,20 +64,20 @@ module SDRAMBus (
                 end
             end
             READ: begin
-                if (!sdram_read) begin
-                    n_state = IDLE;
-                end
                 if (!new_sdram_controller_0_s1_waitrequest && new_sdram_controller_0_s1_readdatavalid) begin
                     sdram_finished = 1;
                     n_state = IDLE;
                 end
-            end
-            WRITE: begin
-                if (!sdram_write) begin
+                if (!sdram_read) begin
                     n_state = IDLE;
                 end
+            end
+            WRITE: begin
                 if (!new_sdram_controller_0_s1_waitrequest) begin
                     sdram_finished = 1;
+                    n_state = IDLE;
+                end
+                if (!sdram_write) begin
                     n_state = IDLE;
                 end
             end

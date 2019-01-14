@@ -41,15 +41,19 @@ module PlayCore (
     assign play_audio_data = audio_data;
     assign play_addr = addr;
 
+    logic counter, n_counter;
+
     always_ff @(posedge i_clk or posedge i_rst) begin
         if ( i_rst ) begin
             state <= IDLE;
             audio_data <= 0;
             addr <= 0;
+            counter <= 0;
         end else begin
             state <= n_state;
             audio_data <= n_audio_data;
             addr <= n_addr;
+            counter <= n_counter;
         end
     end
 
@@ -64,6 +68,8 @@ module PlayCore (
         play_read = 0;
         play_audio_valid = 0;
 
+        n_counter = counter;
+
         case(state)
             IDLE: begin
                 if (play_start) begin
@@ -72,23 +78,28 @@ module PlayCore (
                 n_addr = 0;
             end
             READ: begin
-				if (!play_start) begin
-                    n_state = IDLE;
-                end
                 play_read = 1;
                 n_audio_data = play_readdata;
                 if (play_sdram_finished) begin
                     n_state = PLAY;
+                    n_counter = 0;
                     n_addr = addr + 1;
+                end
+                if (!play_start) begin
+                    n_state = IDLE;
                 end
             end
             PLAY: begin
-				if (!play_start) begin
-                    n_state = IDLE;
-                end
                 play_audio_valid = 1;
                 if (play_audio_ready) begin
-                    n_state = READ;
+                    if ( counter == 1 ) begin
+                        n_state = READ;
+                    end else begin
+                        n_counter = 1;
+                    end
+                end
+                if (!play_start) begin
+                    n_state = IDLE;
                 end
             end
             default: n_state = state;
