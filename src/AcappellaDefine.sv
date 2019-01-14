@@ -6,7 +6,7 @@
 
 
 
-parameter bit [22:0] CHUNK [4:0] = '{23'h000000, 23'h040000, 23'h080000, 23'h0C0000, 23'h100000};
+parameter bit [22:0] CHUNK [4:0] = '{23'h100000, 23'h0C0000, 23'h080000, 23'h040000, 23'h000000};
 
 parameter control_IDLE  = 4'd0;
 parameter control_REC   = 4'd1;

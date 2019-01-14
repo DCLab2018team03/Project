@@ -58,9 +58,9 @@ module AcappellaCore (
         // To RS232
     );
 
-    logic mix_start, mix_done;
+    logic mix_start, mix_stop, mix_done;
     logic [22:0] mix_select [4:0]; 
-    logic [2:0] mix_num;
+    logic [4:0] mix_num,
     logic mix_read, mix_write, mix_sdram_finished;
     logic [22:0] mix_addr;
     logic [31:0] mix_readdata, mix_writedata;
@@ -75,6 +75,7 @@ module AcappellaCore (
         .mix_start(mix_start),
         .mix_select(mix_select),
         .mix_num(mix_num),
+        .mix_stop(mix_stop),
         .mix_done(mix_done),
 
         // To SDRAM
@@ -199,6 +200,7 @@ module AcappellaCore (
         .mix_start(mix_start),
         .mix_select(mix_select),
         .mix_num(mix_num),
+        .mix_stop(mix_stop),
         .mix_done(mix_done),
 
         .pitch_start(pitch_start),

@@ -10,7 +10,8 @@ module ControlCore (
     input  logic loaddata_done,
     output logic mix_start,
     output logic [22:0] mix_select [4:0],
-    output logic [2:0] mix_num, // how many data to mix
+    output logic [4:0] mix_num,
+    output logic mix_stop,
     input  logic mix_done,
     output logic pitch_start,
     output logic [22:0] pitch_select [1:0],
@@ -55,7 +56,7 @@ module ControlCore (
     assign pitch_select[1] = 0;
     assign pitch_mode = 0;
     assign pitch_speed = 0;
-    assign record_select[0] = 0;
+    //assign record_select[0] = 0;
     assign record_select[1] = 0;
     assign record_pause = 0;
     //assign record_stop = 0;
@@ -69,6 +70,11 @@ module ControlCore (
         record_start = 0;
         play_start = 0;
         record_stop = 0;
+        play_stop = 1;
+
+        record_select[0] = 0;
+        mix_select[4:0] = {5{23'h7FFFFF}};
+        mix_num = 4'd0;
 
         case(state)
             control_IDLE: begin
@@ -78,12 +84,20 @@ module ControlCore (
                 if (PLAY) begin
                     n_state = control_PLAY;
                 end
-                if (SW[0]) begin
+                if (SW[5]) begin
                     n_state = control_MIX;
                 end
             end
             control_REC: begin
                 record_start = 1;
+                case(SW[4:0]) begin
+                    5'b00001: record_select[0] = CHUNK[0];
+                    5'b00010: record_select[0] = CHUNK[1];
+                    5'b00100: record_select[0] = CHUNK[2];
+                    5'b01000: record_select[0] = CHUNK[3];
+                    5'b10000: record_select[0] = CHUNK[4];
+                    default:  record_select[0] = 0;
+                end
                 if (STOP) begin
                     record_stop = 1;
                 end
@@ -93,12 +107,47 @@ module ControlCore (
             end
             control_PLAY: begin
                 play_start = 1;
+                case(SW[4:0]) begin
+                    5'b00001: play_select = CHUNK[0];
+                    5'b00010: play_select = CHUNK[1];
+                    5'b00100: play_select = CHUNK[2];
+                    5'b01000: play_select = CHUNK[3];
+                    5'b10000: play_select = CHUNK[4];
+                    default:  play_select = 0;
+                end
+                if (STOP) begin
+                    play_stop = 1;
+                end
                 if (play_done) begin
                     n_state = control_IDLE;
                 end
             end
             control_MIX: begin
-                n_state = state;
+                mix_start = 1;
+                case(KEY[3:0]) begin
+                    4'b0001: begin 
+                        mix_select[0] = CHUNK[0];
+                        mix_num[0] = 1;
+                    end
+                    4'b0010: begin 
+                        mix_select[1] = CHUNK[1];
+                        mix_num[1] = 1;
+                    end
+                    4'b0100: begin 
+                        mix_select[2] = CHUNK[2];
+                        mix_num[2] = 1;
+                    end
+                    4'b1000: begin 
+                        mix_select[3] = CHUNK[4];
+                        mix_num[3] = 1;
+                    end
+                end
+                if (SW[16]) begin
+                    mix_stop = 1;
+                end
+                if (mix_done) begin
+                    n_state = control_IDLE;
+                end
             end
             default: n_state =state;
         endcase
