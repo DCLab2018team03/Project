@@ -32,10 +32,14 @@ module ControlCore (
     assign control_mode = state;
     
     // see define for control state
+    logic REC, PLAY, STOP;
+    assign REC = KEY[0];
+    assign PLAY = KEY[1];
+    assign STOP = KEY[2];
     
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
-            state <= IDLE;
+            state <= control_IDLE;
         end else begin
             state <= n_state;
         end
@@ -54,7 +58,7 @@ module ControlCore (
     //assign record_select[0] = 0;
     //assign record_select[1] = 0;
     assign record_pause = 0;
-    assign record_stop = 0;
+    //assign record_stop = 0;
     //assign play_select = 0;
     assign play_pause = 0;
     assign play_stop = 0;
@@ -64,39 +68,37 @@ module ControlCore (
         n_state = state;
         record_start = 0;
         play_start = 0;
+        record_stop = 0;
 
         case(state)
             control_IDLE: begin
-                if (KEY[0]) begin
-                    n_state = RECORD;
+                if (REC) begin
+                    n_state = control_REC;
                 end
-                if (KEY[1]) begin
-                    n_state = PLAY;
+                if (PLAY) begin
+                    n_state = control_PLAY;
                 end
                 if (SW[0]) begin
-                    n_state = MIX;
+                    n_state = control_MIX;
                 end
             end
             control_REC: begin
                 record_start = 1;
-                if (KEY[1]) begin
-                    n_state = PLAY;
+                if (STOP) begin
+                    record_stop = 1;
                 end
-                if (SW[0]) begin
-                    n_state = MIX;
+                if (record_done) begin
+                    n_state = control_IDLE;
                 end
             end
             control_PLAY: begin
                 play_start = 1;
-                if (KEY[0]) begin
-                    n_state = RECORD;
-                end
-                if (SW[0]) begin
-                    n_state = MIX;
+                if (play_done) begin
+                    n_state = control_IDLE;
                 end
             end
             control_MIX: begin
-                
+                n_state = state;
             end
             default: n_state =state;
         endcase

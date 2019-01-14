@@ -281,6 +281,7 @@ module DE2_115 (
 		// Input
 		.KEY(KEY_debounced),
         .SW(SW),
+        .LEDG(LEDG),
         // avalon_audio_slave
         // avalon_left_channel_source
 		.from_adc_left_channel_ready(w_adc_left_ready),

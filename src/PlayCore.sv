@@ -35,9 +35,10 @@ module PlayCore (
     localparam IDLE = 2'b00;
     localparam READ = 2'b01;
     localparam PLAY = 2'b10;
+    localparam READ_LENGTH = 2'b11;
 
     logic [31:0] audio_data, n_audio_data;
-    logic [22:0] addr, n_addr;
+    logic [22:0] addr, n_addr, audio_length, n_audio_length;
     assign play_audio_data = audio_data;
     assign play_addr = addr;
 
@@ -53,15 +54,16 @@ module PlayCore (
             audio_data <= 0;
             addr <= 0;
             counter <= 0;
+            audio_length <= 0;
         end else begin
             state <= n_state;
             audio_data <= n_audio_data;
             addr <= n_addr;
             counter <= n_counter;
+            audio_length <= n_audio_length;
         end
     end
 
-    assign play_done = 0;
 
     always_comb begin
 
@@ -73,13 +75,24 @@ module PlayCore (
         play_audio_valid = 0;
 
         n_counter = counter;
+        n_audio_length = audio_length;
+        play_done = 0;
 
         case(state)
             IDLE: begin
                 if (play_start) begin
-                    n_state = READ;
+                    n_state = READ_LENGTH;
                 end
-                n_addr = 0;
+                n_addr = play_select;
+            end
+            READ_LENGTH: begin
+                play_read = 1;
+                n_audio_length = play_readdata[22:0] + play_select + 1;
+                if (play_sdram_finished) begin
+                    n_state = READ;
+                    n_counter = 0;
+                    n_addr = addr + 1;
+                end
             end
             READ: begin
                 play_read = 1;
@@ -89,8 +102,9 @@ module PlayCore (
                     n_counter = 0;
                     n_addr = addr + 1;
                 end
-                if (!play_start) begin
+                if (addr == audio_length) begin
                     n_state = IDLE;
+                    play_done = 1;
                 end
             end
             PLAY: begin
@@ -102,11 +116,7 @@ module PlayCore (
                         n_counter = 1;
                     end
                 end
-                if (!play_start) begin
-                    n_state = IDLE;
-                end
             end
-            default: n_state = state;
         endcase
     end
 endmodule

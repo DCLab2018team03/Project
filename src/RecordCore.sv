@@ -39,7 +39,7 @@ module RecordCore (
     localparam IDLE  = 2'b00;
     localparam REC   = 2'b01;
     localparam WRITE = 2'b10;
-    localparam WRONG = 2'b11;
+    localparam WRITE_LENGTH = 2'b11;
 
     logic [31:0] audio_data, n_audio_data;
     logic [22:0] addr, n_addr;
@@ -66,7 +66,6 @@ module RecordCore (
             counter <= n_counter;
         end
     end
-    assign record_done = 0;
     assign record_read = 0;
 
     always_comb begin
@@ -79,6 +78,7 @@ module RecordCore (
         record_write = 0;
 
         n_counter = counter;
+        record_done = 0;
 
         case(state)
             IDLE: begin
@@ -86,7 +86,7 @@ module RecordCore (
                     n_state = REC;
                     n_counter = 0;
                 end
-                n_addr = 0;
+                n_addr = record_select[0] + 1;
             end
             REC: begin
                 record_audio_ready = 1;
@@ -99,8 +99,9 @@ module RecordCore (
                         n_counter = 1;
                     end
                 end
-                if (!record_start) begin
-                    n_state = IDLE;
+                if (record_stop) begin
+                    n_state = WRITE_LENGTH;
+                    n_audio_data = addr - record_select[0] - 1;
                 end
             end
             WRITE: begin
@@ -110,11 +111,14 @@ module RecordCore (
                     n_counter = 0;
                     n_addr = addr + 1;
                 end
-                if (!record_start) begin
+            end
+            WRITE_LENGTH: begin
+                record_write = 1;
+                if (record_sdram_finished) begin
                     n_state = IDLE;
+                    record_done = 1;
                 end
             end
-            default: n_state = state;
         endcase
 
     end

@@ -11,7 +11,8 @@ parameter  AnalysisFrameSize = 2560;
 // format: unsigned, the first bit is preserverd (in case they are used to be signed),
 //         the remaining represents the floating point of the coefficients
 //         (no precise 1 occurs, so it's OK not to store the int part)
-parameter signed [19:0] HANN_C [WindowSize-1:0] = {
+
+parameter bit signed [19:0] HANN_C [WindowSize-1:0] = '{
 20'b00000000000000000000,
 20'b00000000000000000100,
 20'b00000000000000010011,
