@@ -9,6 +9,7 @@
 // Communicate with SDRAM by read, write.
 // Give control signal, address(and data).
 // Once finished = 1, data has been writen(or the readdata is correct)
+`include "PitchDefine.sv"
 
 module PitchCore (
     input i_clk,
@@ -36,7 +37,7 @@ module PitchCore (
     output logic        SRAM_LB_N,   // SRAM Low-byte Data Mask 
     output logic        SRAM_UB_N    // SRAM High-byte Data Mask
 );  
-  /*  localparam SRAM_NOT_SELECT = 5'b01000;
+    localparam SRAM_NOT_SELECT = 5'b01000;
     localparam SRAM_READ       = 5'b10000;
     localparam SRAM_WRITE      = 5'b00000;
     logic [15:0] n_SRAM_DQ;
@@ -474,5 +475,5 @@ module PitchCore (
                 endcase
             end
         endcase
-    end*/
+    end
 endmodule
