@@ -29,7 +29,7 @@ module PitchCore (
     output logic [31:0] pitch_writedata,
     input  logic pitch_sdram_finished,
     // To SRAM
-    inout  logic [15:0] SRAM_DQ,     // SRAM Data bus 16 Bits
+    inout  logic signed [15:0] SRAM_DQ,     // SRAM Data bus 16 Bits
     output logic [19:0] SRAM_ADDR,   // SRAM Address bus 20 Bits
     output logic        SRAM_WE_N,   // SRAM Write Enable
     output logic        SRAM_CE_N,   // SRAM Chip Enable
@@ -86,18 +86,18 @@ module PitchCore (
     logic [10:0] correlation_counter, n_correlation_counter; // iterate correlation (0~1024)
     logic [22:0] data_length_counter, n_data_length_counter; // iterate data_length (0~datalength)
     logic sramRW, n_sramRW;
-    logic [15:0] temp_data;
-    logic [35:0] temp_hann_data;
+    logic signed [15:0] temp_data;
+    logic signed [35:0] temp_hann_data;
     logic [32:0] partial_product, n_partial_product;
     logic [31:0] resample_temp_data;
     logic [25:0] resample_address, n_resample_address;
-    logic [15:0] predict_frame [WindowSize-1:0];
+    logic signed [31:0] predict_frame [WindowSize-1:0];
     logic [31:0] overlap_data [HalfWindowSize-1:0];
     logic [19:0] max_correlation_index;
     logic [32:0] max_correlation_value;
     logic [9:0] frame_size_not_enough;
     logic channelLR, n_channelLR;
-    integer i;
+
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
             state <= IDLE;
@@ -179,7 +179,7 @@ module PitchCore (
                     READ_HEADER: begin
                         if (pitch_sdram_finished == 1) begin
                             n_pitch_addr = pitch_addr + 1;
-                            data_length = pitch_readdata[31:9];
+                            data_length = pitch_readdata[22:0];
                             n_data_state = READ_DATA;
                         end
                     end
@@ -207,14 +207,14 @@ module PitchCore (
                                 n_channelLR = 0;
                                 max_correlation_index = 0;
                                 max_correlation_value = 0;
-                                frame_size_not_enough = data_length_counter;
+                                frame_size_not_enough = data_counter;
                             end
                             else begin
                                 if (frame_counter == 0) begin
                                     if (data_counter == (WindowSize + H_s - 1) && channelLR == 1) begin
-                                        n_state = APPLY_WINDOW;
+                                        n_state = PREDICT_NEXT_FRAME;
                                         n_pitch_read = 0;
-                                        n_SRAM_ADDR = 0;
+                                        n_SRAM_ADDR = 2*H_s;
                                         n_sramRW = 0;
                                         n_data_counter = 0;
                                         n_channelLR = 0;
@@ -280,6 +280,7 @@ module PitchCore (
                         end
                         else begin
                             n_pitch_addr = pitch_select[0] + 1 + frame_counter * H_a - tolerance;
+                            frame_size_not_enough = 0;
                         end
                         n_frame_counter = frame_counter + 1;
                     end
@@ -322,7 +323,7 @@ module PitchCore (
                         n_data_counter = data_counter + 1;
                         if (data_counter == WindowSize - 1) begin
                             n_sramRW = 0;
-                            n_SRAM_ADDR = SRAM_ADDR - WindowSize;
+                            n_SRAM_ADDR = SRAM_ADDR - WindowSize + 1;
                             n_data_counter = 0;
                             n_state = OLA_COMPUTE;
                         end
@@ -358,22 +359,45 @@ module PitchCore (
                 end   
             end
             PREDICT_NEXT_FRAME: begin
-                setSRAMenable(SRAM_READ);
-                predict_frame[data_counter] = SRAM_DQ * HANN_C[data_counter];
-                n_data_counter = data_counter + 1;
-                n_SRAM_ADDR = SRAM_ADDR + 2;
-                if (data_counter == WindowSize-1) begin
+                if (frame_counter == 0) begin
+                    setSRAMenable(SRAM_READ);
+                    n_SRAM_ADDR = SRAM_ADDR + 1;
                     if (!channelLR) begin
-                        n_state = CROSS_CORRELATION;
-                        n_data_counter = 0;
+                        temp_hann_data = SRAM_DQ * HANN_C[data_counter];
+                        predict_frame[data_counter][31:16] = temp_hann_data[35:20];
                         n_channelLR = 1;
-                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 2 - H_s;
                     end
                     else begin
+                        temp_hann_data = SRAM_DQ * HANN_C[data_counter];
+                        predict_frame[data_counter][15:0] = temp_hann_data[35:20];
+                        n_channelLR = 0;
+                        n_data_counter = data_counter + 1;
+                    end
+                    if (data_counter == WindowSize-1 && channelLR) begin
                         n_state = APPLY_WINDOW;
                         n_data_counter = 0;
                         n_channelLR = 0;
-                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - H_s;
+                        n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - 2*H_s + 1;
+                    end
+                end
+                else begin
+                    setSRAMenable(SRAM_READ);
+                    predict_frame[data_counter] = SRAM_DQ * HANN_C[data_counter];
+                    n_data_counter = data_counter + 1;
+                    n_SRAM_ADDR = SRAM_ADDR + 2;
+                    if (data_counter == WindowSize-1) begin
+                        if (!channelLR) begin
+                            n_state = CROSS_CORRELATION;
+                            n_data_counter = 0;
+                            n_channelLR = 1;
+                            n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 2 - H_s;
+                        end
+                        else begin
+                            n_state = APPLY_WINDOW;
+                            n_data_counter = 0;
+                            n_channelLR = 0;
+                            n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - H_s;
+                        end
                     end
                 end
             end
