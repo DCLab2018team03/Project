@@ -102,12 +102,12 @@ module Rsa256Wrapper(
         n_sdram_writedata = sdram_writedata;
 		case(state_r)		
 			QUERY_RX: begin
-				if(!avm_waitrequest && avm_read_r) begin
+                if(!avm_waitrequest && avm_read_r) begin
                     if(avm_readdata[RX_OK_BIT]) begin
-					    StartRead(RX_BASE);
+                        StartRead(RX_BASE);
                         state_w = READ;
                     end
-				end 
+                end 
                 else begin
                     StartRead(STATUS_BASE);
                     state_w = QUERY_RX;
@@ -121,7 +121,7 @@ module Rsa256Wrapper(
 					case(data_state_r)
                         READ_ADDRESS: begin
                             address_w = address_r << 8;
-                            address_w = avm_readdata[7:0];
+                            address_w[7:0] = avm_readdata[7:0];
                             if (bytes_counter_r == 3) begin
                                 data_state_w = READ_HEADER;
                                 bytes_counter_w = 0;
@@ -129,7 +129,7 @@ module Rsa256Wrapper(
                         end
                         READ_HEADER: begin
                             header_w = header_r << 8;
-                            header_w = avm_readdata[7:0];
+                            header_w[7:0] = avm_readdata[7:0];
                             if (bytes_counter_r == 3) begin
                                 data_state_w = READ_DATA;
                                 bytes_counter_w = 0;
