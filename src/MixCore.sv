@@ -35,7 +35,7 @@ module MixCore (
     output [2:0] debug
 );
 
-    assign debug = state;
+    //assign debug = state;
 
     localparam MIX_BIT = 4;
     localparam LG_MIX_BIT = 2;
@@ -43,7 +43,7 @@ module MixCore (
     logic [2:0] state, n_state;
     logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
-    logic [LG_MIX_BIT - 1:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter, new_amount, n_new_amount;
+    logic signed [LG_MIX_BIT:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter, new_amount, n_new_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize;
 
     logic signed [31:0] n_mix_audio_data;
@@ -132,8 +132,7 @@ module MixCore (
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
                         if (mix_counter == 3) begin
-                            //n_state = DIVIDE;
-                            n_state = ADD;
+                            n_state = DIVIDE;
                             n_mix_counter = 0;
                             n_new_amount = 0;
                         end
@@ -142,16 +141,15 @@ module MixCore (
                 else begin
                     n_mix_counter = mix_counter + 1;
                     if (mix_counter == 3) begin
-                        //n_state = DIVIDE;
-                        n_state = ADD;
+                        n_state = DIVIDE;
                         n_mix_counter = 0;
                         n_new_amount = 0;
                     end
                 end
             end
-            /*DIVIDE: begin
+            DIVIDE: begin
                 n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]) / $signed(mix_amount);
-                n_mix_data[mix_counter][15:0] = $signed([mix_counter][15:0]) / $signed(mix_amount);
+                n_mix_data[mix_counter][15:0] = $signed(mix_data[mix_counter][15:0]) / $signed(mix_amount);
                 n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
@@ -160,7 +158,7 @@ module MixCore (
                 if (addr[mix_counter] != length[mix_counter]) begin
                     n_new_amount = new_amount + 1;
                 end
-            end*/
+            end
             ADD: begin
                 n_mix_audio_data[31:16] = $signed(mix_data[0][31:16]) + $signed(mix_data[1][31:16]) + $signed(mix_data[2][31:16]) + $signed(mix_data[3][31:16]);
                 n_mix_audio_data[15:0] = $signed(mix_data[0][15:0]) + $signed(mix_data[1][15:0]) + $signed(mix_data[2][15:0]) + $signed(mix_data[3][15:0]);
