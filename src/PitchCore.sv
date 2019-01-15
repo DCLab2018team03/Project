@@ -36,7 +36,7 @@ module PitchCore (
     output logic        SRAM_OE_N,   // SRAM Output Enable
     output logic        SRAM_LB_N,   // SRAM Low-byte Data Mask 
     output logic        SRAM_UB_N    // SRAM High-byte Data Mask
-);  /*
+);  
     localparam SRAM_NOT_SELECT = 5'b01000;
     localparam SRAM_READ       = 5'b10000;
     localparam SRAM_WRITE      = 5'b00000;
@@ -254,13 +254,13 @@ module PitchCore (
                         n_pitch_addr = pitch_addr;
                         n_SRAM_ADDR = SRAM_ADDR + 1;
                         n_data_counter = data_counter;
-                        n_channelLR = 1;                    
-                    end
-                    if (frame_counter == 0) begin
-                        n_pitch_writedata[31:16] = SRAM_DQ;
-                    end
-                    else begin
-                        n_pitch_writedata[31:16] = SRAM_DQ + overlap_data[data_counter][31:16];
+                        n_channelLR = 1;
+                        if (frame_counter == 0) begin
+                            n_pitch_writedata[31:16] = SRAM_DQ;
+                        end
+                        else begin
+                            n_pitch_writedata[31:16] = SRAM_DQ + overlap_data[data_counter][31:16];
+                        end                    
                     end
                 end
                 else begin
@@ -303,12 +303,12 @@ module PitchCore (
                                 end
                             end
                         end
-                    end
-                    if (frame_counter == 0) begin
-                        n_pitch_writedata[15:0] = SRAM_DQ;
-                    end
-                    else begin
-                        n_pitch_writedata[15:0] = SRAM_DQ + overlap_data[data_counter][15:0];
+                        if (frame_counter == 0) begin
+                            n_pitch_writedata[15:0] = SRAM_DQ;
+                        end
+                        else begin
+                            n_pitch_writedata[15:0] = SRAM_DQ + overlap_data[data_counter][15:0];
+                        end
                     end
                 end
             end
@@ -398,12 +398,12 @@ module PitchCore (
                     n_SRAM_ADDR = SRAM_ADDR + 1;
                     if (!channelLR) begin
                         temp_hann_data = SRAM_DQ * HANN_C[data_counter];
-                        predict_frame[data_counter][31:16] = temp_hann_data[35:20];
+                        predict_frame[data_counter][31:16] = temp_hann_data[34:19];
                         n_channelLR = 1;
                     end
                     else begin
                         temp_hann_data = SRAM_DQ * HANN_C[data_counter];
-                        predict_frame[data_counter][15:0] = temp_hann_data[35:20];
+                        predict_frame[data_counter][15:0] = temp_hann_data[34:19];
                         n_channelLR = 0;
                         n_data_counter = data_counter + 1;
                     end
@@ -539,5 +539,5 @@ module PitchCore (
                 end
             end
         endcase
-    end*/
+    end
 endmodule
