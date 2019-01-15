@@ -180,6 +180,7 @@ module PitchCore (
         n_H_a = H_a;
         n_data_length = data_length;
         n_resample_temp_data = resample_temp_data;
+        n_resample_address = resample_address;
         n_temp_data = temp_data;
         for (k=0;k<WindowSize;k=k+1) begin
             n_predict_frame[k] = predict_frame[k];
@@ -191,6 +192,8 @@ module PitchCore (
         n_max_correlation_index_R = max_correlation_index_R;
         n_max_correlation_value = max_correlation_value;
         n_frame_size_not_enough = frame_size_not_enough;
+        temp_H_a = 0;
+        temp_hann_data = 0;
         case (state)
             IDLE: begin
                 if (pitch_start) begin
@@ -238,7 +241,9 @@ module PitchCore (
                                 n_data_counter = data_counter + 1;
                             end
                             if (pitch_addr == pitch_select[0] + data_length && channelLR == 1) begin
-                                n_state = CROSS_CORRELATION;
+                                n_state = IDLE;
+                                n_pitch_done = 1;
+                                /*n_state = CROSS_CORRELATION;
                                 n_pitch_read = 0;
                                 n_SRAM_ADDR = 0;
                                 n_sramRW = 0;
@@ -247,7 +252,7 @@ module PitchCore (
                                 n_max_correlation_index_L = 0;
                                 n_max_correlation_index_R = 0;
                                 n_max_correlation_value = 33'h100000000;
-                                n_frame_size_not_enough = data_counter;
+                                n_frame_size_not_enough = data_counter;*/
                             end
                             else begin
                                 if (frame_counter == 0) begin
