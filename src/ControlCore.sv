@@ -29,7 +29,8 @@ module ControlCore (
     output logic play_pause,
     output logic play_stop,
     input  logic play_done,
-    output logic play_num,
+    output logic play_record,
+    output logic play_speed,
     output [3:0] debug
 );
     assign debug = state;
@@ -41,8 +42,9 @@ module ControlCore (
     logic REC, PLAY, STOP, MIX, PITCH;
     assign REC = gpio[11];
     assign PLAY = gpio[10];
-    assign STOP = gpio[9];
-    assign MIX = gpio[8];
+    assign MIX = gpio[9];
+    assign STOP = gpio[8];
+    
     //assign PITCH = KEY[3];
     
     always_ff @(posedge i_clk or posedge i_rst) begin
@@ -57,7 +59,7 @@ module ControlCore (
     //assign mix_select[1] = 0;
     //assign mix_select[2] = 0;
     //assign mix_select[3] = 0;
-    assign mix_select[4] = 0;
+    //assign mix_select[4] = 0;
     //assign pitch_start = 0;
     //assign pitch_select[0] = 0;
     //assign pitch_select[1] = 0;
@@ -94,7 +96,8 @@ module ControlCore (
         pitch_mode = 0;
         pitch_speed = 0;
         mix_num = 4'd0;
-
+        play_record = 0;
+        play_speed = 0;
         case(state)
             control_IDLE: begin
                 if (REC) begin
@@ -113,11 +116,26 @@ module ControlCore (
             control_REC: begin
                 record_start = 1;
                 case(SW[4:0])
-                    5'b00001: record_select[0] = CHUNK[0];
-                    5'b00010: record_select[0] = CHUNK[1];
-                    5'b00100: record_select[0] = CHUNK[2];
-                    5'b01000: record_select[0] = CHUNK[3];
-                    5'b10000: record_select[0] = CHUNK[4];
+                    5'b00001: begin
+                        record_select[0] = CHUNK[0];
+                        play_record = 1;
+                    end
+                    5'b00010: begin
+                        record_select[0] = CHUNK[1];
+                        play_record = 1;
+                    end
+                    5'b00100: begin
+                        record_select[0] = CHUNK[2];
+                        play_record = 1;
+                    end
+                    5'b01000: begin
+                        record_select[0] = CHUNK[3];
+                        play_record = 1;
+                    end
+                    5'b10000: begin
+                        record_select[0] = CHUNK[4];
+                        play_record = 1;
+                    end
                     default:  record_select[0] = 0;
                 endcase
                 if (STOP) begin
@@ -129,6 +147,20 @@ module ControlCore (
             end
             control_PLAY: begin
                 play_start = 1;
+                case(gpio[3:0])
+                    4'b0001: begin 
+                        mix_select[0] = CHUNK[0];
+                    end
+                    4'b0010: begin 
+                        mix_select[0] = CHUNK[1];
+                    end
+                    4'b0100: begin 
+                        mix_select[0] = CHUNK[2];
+                    end
+                    4'b1000: begin 
+                        mix_select[0] = CHUNK[4];
+                    end
+                endcase                
                 case(SW[4:0])
                     5'b00001: play_select[1] = CHUNK[0];
                     5'b00010: play_select[1] = CHUNK[1];
@@ -137,7 +169,7 @@ module ControlCore (
                     5'b10000: play_select[1] = CHUNK[4];
                     default:  play_select[1] = 0;
                 endcase
-
+                play_speed = SW[11:10];
                 if (STOP) begin
                     play_stop = 1;
                 end
@@ -166,7 +198,15 @@ module ControlCore (
                         mix_num[3] = 1;
                     end
                 endcase
-                if (gpio[9]) begin
+                case(SW[4:0])
+                    5'b00001: mix_select[1] = CHUNK[0];
+                    5'b00010: mix_select[1] = CHUNK[1];
+                    5'b00100: mix_select[1] = CHUNK[2];
+                    5'b01000: mix_select[1] = CHUNK[3];
+                    5'b10000: mix_select[1] = CHUNK[4];
+                    default:  mix_select[1] = 0;
+                endcase
+                if (STOP) begin
                     mix_stop = 1;
                 end
                 if (mix_done) begin

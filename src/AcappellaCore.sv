@@ -159,11 +159,13 @@ module AcappellaCore (
 
     logic play_start, play_pause, play_stop, play_done;
     logic [22:0] play_select [1:0];
-    logic [1:0] play_num;
+    logic play_record;
 
     logic play_read, play_sdram_finished;
     logic [22:0] play_addr, play_write;
     logic [31:0] play_readdata, play_writedata;
+    logic play_record;
+    logic [1:0] play_speed;
 
     logic play_audio_valid, play_audio_ready;
     logic [31:0] play_audio_data;
@@ -177,6 +179,8 @@ module AcappellaCore (
         .play_pause(play_pause),
         .play_stop(play_stop),
         .play_done(play_done),
+        .play_record(play_record),
+        .play_speed(play_speed),
 
         // To SDRAM
         .play_read(play_read),
@@ -230,10 +234,10 @@ module AcappellaCore (
         .play_pause(play_pause),
         .play_stop(play_stop),
         .play_done(play_done),
-        .play_num(play_num),
+        .play_record(play_record),
+        .play_speed(play_speed),
         .debug(debug)
     );
-
 
     logic sdram_read, sdram_write, sdram_finished;
     logic [22:0] sdram_addr;

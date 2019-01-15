@@ -19,7 +19,8 @@ module PlayCore (
     input  logic play_pause,
     input  logic play_stop,
     output logic play_done,
-    input  logic [1:0] play_num, // 01 for play only, 10 for store only, 11 for both
+    input logic play_record,
+    input logic [1:0] play_speed,
 
     // To SDRAM
     output logic play_read,
@@ -49,7 +50,7 @@ module PlayCore (
     assign play_audio_data = audio_data;
     assign play_addr = addr;
 
-    logic counter, n_counter;
+    logic [1:0] counter, n_counter;
 
     // TODO
     // 1. read datalength
@@ -90,11 +91,11 @@ module PlayCore (
                 if (play_start) begin
                     n_state = READ_LENGTH;
                 end
-                n_addr = play_select;
+                n_addr = play_select[0];
             end
             READ_LENGTH: begin
                 play_read = 1;
-                n_audio_length = play_select + play_readdata[22:0] + 1;
+                n_audio_length = play_select[0] + play_readdata[22:0] + 1;
                 if (play_sdram_finished) begin
                     n_state = READ;
                     n_counter = 0;
@@ -117,10 +118,13 @@ module PlayCore (
             PLAY: begin
                 play_audio_valid = 1;
                 if (play_audio_ready) begin
-                    if ( counter == 1 ) begin
+                    if ( (counter >= 1 && play_speed == 2'b00) || 
+                         (counter >= 3 && play_speed == 2'b10) || 
+                         (counter >= 0 && play_speed == 2'b01) ||) begin
+                        n_counter = 0;
                         n_state = READ;
                     end else begin
-                        n_counter = 1;
+                        n_counter = counter + 1;
                     end
                 end
             end
