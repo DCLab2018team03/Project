@@ -102,7 +102,7 @@ module PitchCore (
     logic [9:0] frame_size_not_enough, n_frame_size_not_enough;
     logic channelLR, n_channelLR;
 
-    integer i;
+    integer i, j, k, l;
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
             state <= IDLE;
@@ -149,8 +149,8 @@ module PitchCore (
             for (i=0;i<WindowSize;i=i+1) begin
                 predict_frame[i] <= n_predict_frame[i];
             end
-            for (i=0;i<HalfWindowSize;i=i+1) begin
-                overlap_data[i] <= n_overlap_data[i];
+            for (j=0;j<HalfWindowSize;j=j+1) begin
+                overlap_data[j] <= n_overlap_data[j];
             end
             max_correlation_index_L <= n_max_correlation_index_L;
             max_correlation_index_R <= n_max_correlation_index_R;
@@ -181,11 +181,11 @@ module PitchCore (
         n_data_length = data_length;
         n_resample_temp_data = resample_temp_data;
         n_temp_data = temp_data;
-        for (i=0;i<WindowSize;i=i+1) begin
-            n_predict_frame[i] = predict_frame[i];
+        for (k=0;k<WindowSize;k=k+1) begin
+            n_predict_frame[k] = predict_frame[k];
         end
-        for (i=0;i<HalfWindowSize;i=i+1) begin
-            n_overlap_data[i] = overlap_data[i];
+        for (l=0;l<HalfWindowSize;l=l+1) begin
+            n_overlap_data[l] = overlap_data[l];
         end
         n_max_correlation_index_L = max_correlation_index_L;
         n_max_correlation_index_R = max_correlation_index_R;
@@ -207,7 +207,7 @@ module PitchCore (
                     n_data_length_counter = 0;
                     n_data_counter = 0;
                     n_channelLR = 0;
-                    frame_size_not_enough = 0;
+                    n_frame_size_not_enough = 0;
                 end
             end
             READ_SDRAM: begin
@@ -390,12 +390,12 @@ module PitchCore (
                     n_partial_product = 0;
                     n_data_counter = 0;
                     if (partial_product > max_correlation_value) begin
-                        max_correlation_value = partial_product;
+                        n_max_correlation_value = partial_product;
                         if (!channelLR) begin
-                            max_correlation_index_L = correlation_counter;
+                            n_max_correlation_index_L = correlation_counter;
                         end
                         else begin
-                            max_correlation_index_R = correlation_counter;
+                            n_max_correlation_index_R = correlation_counter;
                         end
                     end
                     if (frame_size_not_enough > 0) begin
