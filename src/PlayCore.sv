@@ -120,7 +120,7 @@ module PlayCore (
                 if (play_audio_ready) begin
                     if ( (counter >= 1 && play_speed == 2'b00) || 
                          (counter >= 3 && play_speed == 2'b10) || 
-                         (counter >= 0 && play_speed == 2'b01) ||) begin
+                         (counter >= 0 && play_speed == 2'b01)) begin
                         n_counter = 0;
                         n_state = READ;
                     end else begin

@@ -164,7 +164,6 @@ module AcappellaCore (
     logic play_read, play_sdram_finished;
     logic [22:0] play_addr, play_write;
     logic [31:0] play_readdata, play_writedata;
-    logic play_record;
     logic [1:0] play_speed;
 
     logic play_audio_valid, play_audio_ready;

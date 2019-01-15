@@ -87,7 +87,8 @@ module ControlCore (
 		mix_stop = 0;
 
         record_select[0] = 0;
-		play_select = 0;
+		play_select[0] = 0;
+		play_select[1] = 0;
         for (i = 0; i < 5; i = i+1) begin
             mix_select[i] = 0;
         end
@@ -149,16 +150,16 @@ module ControlCore (
                 play_start = 1;
                 case(gpio[3:0])
                     4'b0001: begin 
-                        mix_select[0] = CHUNK[0];
+                        play_select[0] = CHUNK[0];
                     end
                     4'b0010: begin 
-                        mix_select[0] = CHUNK[1];
+                        play_select[0] = CHUNK[1];
                     end
                     4'b0100: begin 
-                        mix_select[0] = CHUNK[2];
+                        play_select[0] = CHUNK[2];
                     end
                     4'b1000: begin 
-                        mix_select[0] = CHUNK[4];
+                        play_select[0] = CHUNK[4];
                     end
                 endcase                
                 case(SW[4:0])
