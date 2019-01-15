@@ -80,26 +80,29 @@ module PitchCore (
     logic [31:0] n_pitch_writedata;
 
     logic [15:0] temp_H_a;
-    logic [12:0] H_a; // = H_s * speed, use H_a[12:3] to discard floating point
-    logic [22:0] data_length;
+    logic [12:0] H_a, n_H_a; // = H_s * speed, use H_a[12:3] to discard floating point
+    logic [22:0] data_length, n_data_length;
     logic [22:0] frame_counter, n_frame_counter; // iterate frames (0~)
     logic [11:0] data_counter, n_data_counter;  // iterate in a frame (0~2559)
     logic [10:0] correlation_counter, n_correlation_counter; // iterate correlation (0~1024)
     logic [22:0] data_length_counter, n_data_length_counter; // iterate data_length (0~datalength)
     logic sramRW, n_sramRW;
-    logic signed [15:0] temp_data;
+    logic signed [15:0] temp_data, n_temp_data;
     logic signed [35:0] temp_hann_data;
     logic signed [32:0] partial_product, n_partial_product;
-    logic [31:0] resample_temp_data;
+    logic [31:0] resample_temp_data, n_resample_temp_data;
     logic [25:0] resample_address, n_resample_address;
     logic signed [31:0] predict_frame [WindowSize-1:0];
+    logic signed [31:0] n_predict_frame [WindowSize-1:0];
     logic [31:0] overlap_data [HalfWindowSize-1:0];
-    logic [19:0] max_correlation_index_L;
-    logic [19:0] max_correlation_index_R;
-    logic signed [32:0] max_correlation_value;
-    logic [9:0] frame_size_not_enough;
+    logic [31:0] n_overlap_data [HalfWindowSize-1:0];
+    logic [19:0] max_correlation_index_L, n_max_correlation_index_L;
+    logic [19:0] max_correlation_index_R, n_max_correlation_index_R;
+    logic signed [32:0] max_correlation_value, n_max_correlation_value;
+    logic [9:0] frame_size_not_enough, n_frame_size_not_enough;
     logic channelLR, n_channelLR;
 
+    integer i;
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
             state <= IDLE;
@@ -118,6 +121,10 @@ module PitchCore (
             resample_address <= 0;
             partial_product <= 0;
             channelLR <= 0;
+            H_a <= 0;
+            data_length <= 0;
+            resample_temp_data <= 0;
+            temp_data <= 0;
         end else begin
             state <= n_state;
             pitch_done <= n_pitch_done;
@@ -135,6 +142,20 @@ module PitchCore (
             resample_address <= n_resample_address;
             partial_product <= n_partial_product;
             channelLR <= n_channelLR;
+            H_a <= n_H_a;
+            data_length <= n_data_length;
+            resample_temp_data <= n_resample_temp_data;
+            temp_data <= n_temp_data;
+            for (i=0;i<WindowSize;i=i+1) begin
+                predict_frame[i] <= n_predict_frame[i];
+            end
+            for (i=0;i<HalfWindowSize;i=i+1) begin
+                overlap_data[i] <= n_overlap_data[i];
+            end
+            max_correlation_index_L <= n_max_correlation_index_L;
+            max_correlation_index_R <= n_max_correlation_index_R;
+            max_correlation_value <= n_max_correlation_value;
+            frame_size_not_enough <= n_frame_size_not_enough;
         end 
     end
 
@@ -156,6 +177,20 @@ module PitchCore (
         n_sramRW = sramRW;
         n_partial_product = partial_product;
         n_channelLR = channelLR;
+        n_H_a = H_a;
+        n_data_length = data_length;
+        n_resample_temp_data = resample_temp_data;
+        n_temp_data = temp_data;
+        for (i=0;i<WindowSize;i=i+1) begin
+            n_predict_frame[i] = predict_frame[i];
+        end
+        for (i=0;i<HalfWindowSize;i=i+1) begin
+            n_overlap_data[i] = overlap_data[i];
+        end
+        n_max_correlation_index_L = max_correlation_index_L;
+        n_max_correlation_index_R = max_correlation_index_R;
+        n_max_correlation_value = max_correlation_value;
+        n_frame_size_not_enough = frame_size_not_enough;
         case (state)
             IDLE: begin
                 if (pitch_start) begin
@@ -167,7 +202,7 @@ module PitchCore (
                     n_SRAM_ADDR = 0;
                     n_sramRW = 0;
                     temp_H_a = H_s * pitch_speed; 
-                    H_a = temp_H_a >> 3;
+                    n_H_a = temp_H_a >> 3;
                     n_frame_counter = 0;
                     n_data_length_counter = 0;
                     n_data_counter = 0;
@@ -183,7 +218,7 @@ module PitchCore (
                             n_pitch_addr = pitch_select[1];
                             n_pitch_read = 0;
                             n_pitch_write = 1;
-                            data_length = pitch_readdata[22:0];
+                            n_data_length = pitch_readdata[22:0];
                             n_state = WRITE_HEADER;
                         end
                     end
@@ -209,10 +244,10 @@ module PitchCore (
                                 n_sramRW = 0;
                                 n_data_counter = 0;
                                 n_channelLR = 0;
-                                max_correlation_index_L = 0;
-                                max_correlation_index_R = 0;
-                                max_correlation_value = 33'h100000000;
-                                frame_size_not_enough = data_counter;
+                                n_max_correlation_index_L = 0;
+                                n_max_correlation_index_R = 0;
+                                n_max_correlation_value = 33'h100000000;
+                                n_frame_size_not_enough = data_counter;
                             end
                             else begin
                                 if (frame_counter == 0) begin
@@ -223,9 +258,9 @@ module PitchCore (
                                         n_sramRW = 0;
                                         n_data_counter = 0;
                                         n_channelLR = 0;
-                                        max_correlation_index_L = 0;
-                                        max_correlation_index_R = 0;
-                                        frame_size_not_enough = 0;
+                                        n_max_correlation_index_L = 0;
+                                        n_max_correlation_index_R = 0;
+                                        n_frame_size_not_enough = 0;
                                     end
                                 end
                                 else begin
@@ -236,9 +271,9 @@ module PitchCore (
                                         n_sramRW = 0;
                                         n_data_counter = 0;
                                         n_channelLR = 0;
-                                        max_correlation_index_L = 0;
-                                        max_correlation_index_R = 0;
-                                        max_correlation_value = 33'h100000000;
+                                        n_max_correlation_index_L = 0;
+                                        n_max_correlation_index_R = 0;
+                                        n_max_correlation_value = 33'h100000000;
                                     end
                                 end
                             end
@@ -276,12 +311,12 @@ module PitchCore (
                                 n_SRAM_ADDR = 0;
                                 if ((frame_counter+1)*H_a < tolerance) begin
                                     n_pitch_addr = pitch_select[0] + 1;
-                                    frame_size_not_enough = AnalysisFrameSize - frame_counter*H_a;
+                                    n_frame_size_not_enough = AnalysisFrameSize - frame_counter*H_a;
                                     n_data_counter = AnalysisFrameSize - frame_counter*H_a;
                                 end
                                 else begin
                                     n_pitch_addr = pitch_select[0] + 1 + (frame_counter+1) * H_a - tolerance;
-                                    frame_size_not_enough = 0;
+                                    n_frame_size_not_enough = 0;
                                     n_data_counter = 0;
                                 end
                                 n_frame_counter = frame_counter + 1;
@@ -315,7 +350,7 @@ module PitchCore (
             APPLY_WINDOW: begin
                 if (!sramRW) begin
                     setSRAMenable(SRAM_READ);
-                    temp_data = SRAM_DQ;
+                    n_temp_data = SRAM_DQ;
                     n_sramRW = 1;
                 end
                 else begin
@@ -341,7 +376,6 @@ module PitchCore (
             end
             CROSS_CORRELATION: begin
                 setSRAMenable(SRAM_READ);
-                temp_data = SRAM_DQ;
                 if (!channelLR) begin
                     n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter][31:16]);
                 end
@@ -398,12 +432,12 @@ module PitchCore (
                     n_SRAM_ADDR = SRAM_ADDR + 1;
                     if (!channelLR) begin
                         temp_hann_data = SRAM_DQ * HANN_C[data_counter];
-                        predict_frame[data_counter][31:16] = temp_hann_data[34:19];
+                        n_predict_frame[data_counter][31:16] = temp_hann_data[34:19];
                         n_channelLR = 1;
                     end
                     else begin
                         temp_hann_data = SRAM_DQ * HANN_C[data_counter];
-                        predict_frame[data_counter][15:0] = temp_hann_data[34:19];
+                        n_predict_frame[data_counter][15:0] = temp_hann_data[34:19];
                         n_channelLR = 0;
                         n_data_counter = data_counter + 1;
                     end
@@ -416,20 +450,20 @@ module PitchCore (
                 end
                 else begin
                     setSRAMenable(SRAM_READ);
-                    predict_frame[data_counter] = SRAM_DQ * HANN_C[data_counter];
+                    n_predict_frame[data_counter] = SRAM_DQ * HANN_C[data_counter];
                     n_data_counter = data_counter + 1;
                     n_SRAM_ADDR = SRAM_ADDR + 2;
                     if (data_counter == WindowSize-1) begin
                         if (!channelLR) begin
                             n_state = CROSS_CORRELATION;
-                            max_correlation_value = 33'h100000000;
+                            n_max_correlation_value = 33'h100000000;
                             n_data_counter = 0;
                             n_channelLR = 1;
                             n_SRAM_ADDR = 1;
                         end
                         else begin
                             n_state = APPLY_WINDOW;
-                            max_correlation_value = 33'h100000000;
+                            n_max_correlation_value = 33'h100000000;
                             n_data_counter = 0;
                             n_channelLR = 0;
                             n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - H_s;
@@ -441,12 +475,12 @@ module PitchCore (
                 if (frame_counter == 0) begin
                     setSRAMenable(SRAM_READ);
                     if (!channelLR) begin
-                        overlap_data[data_counter][31:16] = SRAM_DQ;
+                        n_overlap_data[data_counter][31:16] = SRAM_DQ;
                         n_channelLR = 1;
                         n_SRAM_ADDR = SRAM_ADDR + 1;
                     end
                     else begin
-                        overlap_data[data_counter][15:0] = SRAM_DQ;
+                        n_overlap_data[data_counter][15:0] = SRAM_DQ;
                         n_channelLR = 0;
                         n_data_counter = data_counter + 1;
                         n_SRAM_ADDR = SRAM_ADDR + 1;
@@ -461,12 +495,12 @@ module PitchCore (
                 else begin
                     setSRAMenable(SRAM_READ);
                     if (!channelLR) begin
-                        overlap_data[data_counter][31:16] = SRAM_DQ;
+                        n_overlap_data[data_counter][31:16] = SRAM_DQ;
                         n_channelLR = 1;
                         n_SRAM_ADDR = SRAM_ADDR + 1;
                     end
                     else begin
-                        overlap_data[data_counter][15:0] = SRAM_DQ;
+                        n_overlap_data[data_counter][15:0] = SRAM_DQ;
                         n_channelLR = 0;
                         n_data_counter = data_counter + 1;
                         n_SRAM_ADDR = SRAM_ADDR + 1;
@@ -485,7 +519,7 @@ module PitchCore (
                     RESAMPLE_READ: begin
                         n_pitch_read = 1;
                         if (pitch_sdram_finished) begin
-                            resample_temp_data = pitch_readdata;
+                            n_resample_temp_data = pitch_readdata;
                             n_data_state = RESAMPLE_WRITE;
                             n_pitch_read = 0;
                             if (pitch_speed >= 4'b1000) begin
