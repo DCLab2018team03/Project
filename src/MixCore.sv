@@ -111,6 +111,13 @@ module MixCore (
         mix_addr = 0;
 
         case(state)
+            IDLE: begin
+                for (k = 0; k < MIX_BIT; k = k+1) begin
+                    n_length[k] = 0;
+                    n_addr[k] = 0;
+                    n_mix_data[k] = 0;
+                end
+            end
             READ_LENGTH: begin
                 mix_read = 1;
                 mix_addr = addr[initialize];
@@ -213,6 +220,9 @@ module MixCore (
                 n_initialize = 3;
             end
         endcase
-        if(mix_stop) n_state = IDLE;
+        if(mix_stop) begin
+            n_state = IDLE;
+            mix_done = 1;
+        end
     end
 endmodule

@@ -4,6 +4,7 @@ module ControlCore (
     // inputevent
     input logic [3:0] KEY,
     input logic [17:0] SW, 
+    input logic [11:0] gpio,
 
     output logic [3:0] control_mode,
 
@@ -27,19 +28,21 @@ module ControlCore (
     output logic [22:0] play_select,
     output logic play_pause,
     output logic play_stop,
-    input  logic play_done
+    input  logic play_done,
+    output [3:0] debug
 );
+    assign debug = state;
     logic [3:0] state, n_state;
     assign control_mode = state;
     
     // see define for control state
     // Modify to GPIO
     logic REC, PLAY, STOP, MIX, PITCH;
-    assign REC = KEY[0];
-    assign PLAY = KEY[1];
-    assign STOP = KEY[2];
-    assign MIX = KEY[2];
-    assign PITCH = KEY[3];
+    assign REC = gpio[11];
+    assign PLAY = gpio[10];
+    assign STOP = gpio[9];
+    assign MIX = gpio[8];
+    //assign PITCH = KEY[3];
     
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
@@ -75,7 +78,7 @@ module ControlCore (
         record_start = 0;
         play_start = 0;
 		mix_start = 0;
-        pitch_start = 0
+        pitch_start = 0;
         record_stop = 0;
         play_stop = 0;
 		mix_stop = 0;
@@ -86,7 +89,7 @@ module ControlCore (
             mix_select[i] = 0;
         end
         pitch_select[0] = 0;
-        pitch_select[0] = 0;
+        pitch_select[1] = 0;
         pitch_mode = 0;
         pitch_speed = 0;
         mix_num = 4'd0;
@@ -143,7 +146,7 @@ module ControlCore (
             control_MIX: begin
                 mix_start = 1;
                 // Modify to GPIO
-                case(KEY[3:0])
+                case(gpio[3:0])
                     4'b0001: begin 
                         mix_select[0] = CHUNK[0];
                         mix_num[0] = 1;
@@ -161,7 +164,7 @@ module ControlCore (
                         mix_num[3] = 1;
                     end
                 endcase
-                if (SW[16]) begin
+                if (gpio[9]) begin
                     mix_stop = 1;
                 end
                 if (mix_done) begin

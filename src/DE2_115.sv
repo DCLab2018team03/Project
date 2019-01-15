@@ -231,6 +231,8 @@ module DE2_115 (
     wire            new_sdram_controller_0_s1_waitrequest;
     logic [3:0] KEY_debounced;
 
+    logic [11:0] button_pushed;
+
     Total total(
         .audio_0_external_interface_ADCDAT(AUD_ADCDAT),   // audio_0_external_interface.ADCDAT
 		.audio_0_external_interface_ADCLRCK(AUD_ADCLRCK), //                           .ADCLRCK
@@ -316,12 +318,35 @@ module DE2_115 (
         .SRAM_CE_N(SRAM_CE_N),
         .SRAM_OE_N(SRAM_OE_N),
         .SRAM_LB_N(SRAM_LB_N),
-        .SRAM_UB_N(SRAM_UB_N)
+        .SRAM_UB_N(SRAM_UB_N),
+        // GPIO
+        .button_pushed(button_pushed)
 	);
-
-    Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
-    Debounce deb1(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
-    Debounce deb2(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
-    Debounce deb3(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]));
+	/*
+    GPIO gpio(
+		.i_clk(CLOCK_50),
+		.i_rst(rst_main),
+		.gpio(GPIO[19:0]),
+		.button_pushed(button_pushed)
+	);*/
+	
+	assign LEDR[17:0] = ~GPIO[17:0];
+    Debounce deb12(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
+    Debounce deb13(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
+    Debounce deb14(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
+    Debounce deb15(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]));
     
+	Debounce deb0(.i_in(GPIO[0]), .i_clk(CLOCK_50), .o_neg(button_pushed[0]));
+    Debounce deb1(.i_in(GPIO[1]), .i_clk(CLOCK_50), .o_neg(button_pushed[1]));
+    Debounce deb2(.i_in(GPIO[2]), .i_clk(CLOCK_50), .o_neg(button_pushed[2]));
+    Debounce deb3(.i_in(GPIO[3]), .i_clk(CLOCK_50), .o_neg(button_pushed[3]));
+    Debounce deb4(.i_in(GPIO[4]), .i_clk(CLOCK_50), .o_neg(button_pushed[4]));
+    Debounce deb5(.i_in(GPIO[5]), .i_clk(CLOCK_50), .o_neg(button_pushed[5]));
+    Debounce deb6(.i_in(GPIO[6]), .i_clk(CLOCK_50), .o_neg(button_pushed[6]));
+    Debounce deb7(.i_in(GPIO[7]), .i_clk(CLOCK_50), .o_neg(button_pushed[7]));
+    Debounce deb8(.i_in(GPIO[8]), .i_clk(CLOCK_50), .o_neg(button_pushed[8]));
+    Debounce deb9(.i_in(GPIO[9]), .i_clk(CLOCK_50), .o_neg(button_pushed[9]));
+    Debounce deb10(.i_in(GPIO[10]), .i_clk(CLOCK_50), .o_neg(button_pushed[10]));
+    Debounce deb11(.i_in(GPIO[11]), .i_clk(CLOCK_50), .o_neg(button_pushed[11]));
+	 
 endmodule

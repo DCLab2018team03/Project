@@ -38,7 +38,8 @@ module AcappellaCore (
     output        SRAM_WE_N,   // SRAM Write Enable
     output        SRAM_CE_N,   // SRAM Chip Enable
     output        SRAM_UB_N,   // SRAM High-byte Data Mask 
-    output        SRAM_LB_N   // SRAM Low-byte Data Mask 
+    output        SRAM_LB_N,   // SRAM Low-byte Data Mask 
+    input  [11:0]  button_pushed
 );
     logic [2:0] debug;
 
@@ -93,7 +94,7 @@ module AcappellaCore (
         .mix_audio_data(mix_audio_data),
         .mix_audio_ready(mix_audio_ready),
         
-        .debug(debug)
+        .debug()
     );
     
     logic pitch_start, pitch_done;
@@ -198,7 +199,7 @@ module AcappellaCore (
         // input signal
         .KEY(KEY),
         .SW(SW),
-
+        .gpio(button_pushed),
         .control_mode(control_mode),
 
         .loaddata_done(loaddata_done),
@@ -225,7 +226,8 @@ module AcappellaCore (
         .play_select(play_select),
         .play_pause(play_pause),
         .play_stop(play_stop),
-        .play_done(play_done)
+        .play_done(play_done),
+        .debug(debug)
     );
 
 
