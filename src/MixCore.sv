@@ -132,7 +132,8 @@ module MixCore (
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
                         if (mix_counter == 3) begin
-                            n_state = DIVIDE;
+                            //n_state = DIVIDE;
+                            n_state = ADD;
                             n_mix_counter = 0;
                             n_new_amount = 0;
                         end
@@ -141,15 +142,16 @@ module MixCore (
                 else begin
                     n_mix_counter = mix_counter + 1;
                     if (mix_counter == 3) begin
-                        n_state = DIVIDE;
+                        //n_state = DIVIDE;
+                        n_state = ADD;
                         n_mix_counter = 0;
                         n_new_amount = 0;
                     end
                 end
             end
-            DIVIDE: begin
-                n_mix_data[mix_counter][31:16] = mix_data[mix_counter][31:16] / $signed(mix_amount);
-                n_mix_data[mix_counter][15:0] = mix_data[mix_counter][15:0] / $signed(mix_amount);
+            /*DIVIDE: begin
+                n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]) / $signed(mix_amount);
+                n_mix_data[mix_counter][15:0] = $signed([mix_counter][15:0]) / $signed(mix_amount);
                 n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
@@ -158,9 +160,10 @@ module MixCore (
                 if (addr[mix_counter] != length[mix_counter]) begin
                     n_new_amount = new_amount + 1;
                 end
-            end
+            end*/
             ADD: begin
-                n_mix_audio_data = mix_data[0] + mix_data[1] + mix_data[2] + mix_data[3];
+                n_mix_audio_data[31:16] = $signed(mix_data[0][31:16]) + $signed(mix_data[1][31:16]) + $signed(mix_data[2][31:16]) + $signed(mix_data[3][31:16]);
+                n_mix_audio_data[15:0] = $signed(mix_data[0][15:0]) + $signed(mix_data[1][15:0]) + $signed(mix_data[2][15:0]) + $signed(mix_data[3][15:0]);
                 n_state = PLAY;
                 n_mix_amount = new_amount;
             end
