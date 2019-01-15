@@ -148,9 +148,9 @@ module MixCore (
                     mix_read = 1;
                     if (mix_sdram_finished) begin
                         n_mix_data[mix_counter] = $signed(mix_readdata);
-                        //n_state = READ;
-                        n_state = READ_WAIT;
-                        n_wait_counter = 0;
+                        n_state = READ;
+                        //n_state = READ_WAIT;
+                        //n_wait_counter = 0;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
                         n_mix_amount = mix_amount + 1;
@@ -171,13 +171,13 @@ module MixCore (
                     end
                 end
             end
-            READ_WAIT: begin
+            /*READ_WAIT: begin
                 n_wait_counter = wait_counter + 1;
                 if (wait_counter == 3'd7) begin
                     n_wait_counter = 0;
                     n_state = READ;
                 end
-            end
+            end*/
             DIVIDE: begin
                 n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]);// / $signed(mix_amount);
                 n_mix_data[mix_counter][15:0] = $signed(mix_data[mix_counter][15:0]);// / $signed(mix_amount);

@@ -26,8 +26,6 @@ module SDRAMBus (
 
 );
     assign new_sdram_controller_0_s1_address = sdram_addr;
-    assign new_sdram_controller_0_s1_read_n = !sdram_read;
-    assign new_sdram_controller_0_s1_write_n = !sdram_write;
     assign new_sdram_controller_0_s1_chipselect = 1'b1;
 
     assign new_sdram_controller_0_s1_byteenable_n = 4'd0;
@@ -53,6 +51,8 @@ module SDRAMBus (
 
         n_state = state;
         sdram_finished = 0;
+        new_sdram_controller_0_s1_read_n = 1;
+        new_sdram_controller_0_s1_write_n = 1;
         
         case(state)
             IDLE: begin
@@ -64,6 +64,7 @@ module SDRAMBus (
                 end
             end
             READ: begin
+                new_sdram_controller_0_s1_read_n = 0;
                 if (!new_sdram_controller_0_s1_waitrequest && new_sdram_controller_0_s1_readdatavalid) begin
                     sdram_finished = 1;
                     n_state = IDLE;
@@ -73,6 +74,7 @@ module SDRAMBus (
                 end
             end
             WRITE: begin
+                new_sdram_controller_0_s1_write_n = 1;
                 if (!new_sdram_controller_0_s1_waitrequest) begin
                     sdram_finished = 1;
                     n_state = IDLE;
