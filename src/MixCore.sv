@@ -29,7 +29,7 @@ module MixCore (
 
     // To Audio
     output logic mix_audio_valid,
-    output logic [31:0] mix_audio_data,
+    output logic signed [31:0] mix_audio_data,
     input  logic mix_audio_ready,
 
     output [2:0] debug
@@ -46,7 +46,7 @@ module MixCore (
     logic [LG_MIX_BIT - 1:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter, new_amount, n_new_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize;
 
-    logic [31:0] n_mix_audio_data;
+    logic signed [31:0] n_mix_audio_data;
     logic counter, n_counter;
 
     parameter IDLE = 3'd0;
@@ -57,7 +57,7 @@ module MixCore (
     parameter PLAY  = 3'd4;
     parameter WRITE = 3'd5;
 
-    integer i; 
+    integer i, j ,k; 
 
     always_ff @(posedge i_clk or posedge i_rst) begin
         if ( i_rst ) begin
@@ -75,10 +75,10 @@ module MixCore (
             counter <= 0;
         end else begin
             state <= n_state;
-            for (i = 0; i < MIX_BIT; i = i+1) begin
-                length[i] <= n_length[i]; // data total length
-                addr[i] <= n_addr[i]; // data length (stop when eaual to length)
-                mix_data[i] <= n_mix_data[i]; // data 
+            for (j = 0; j < MIX_BIT; j = j+1) begin
+                length[j] <= n_length[j]; // data total length
+                addr[j] <= n_addr[j]; // data length (stop when eaual to length)
+                mix_data[j] <= n_mix_data[j]; // data 
             end
             mix_amount <= n_mix_amount;  // how many data is mixing now
             new_amount <= n_new_amount;  // update new data amount
@@ -92,10 +92,10 @@ module MixCore (
     always_comb begin
         // 4'th bit don't bother
         n_state = state;
-        for (i = 0; i < MIX_BIT; i = i+1) begin
-            n_length[i] = length[i];
-            n_addr[i] = addr[i];
-            n_mix_data[i] = mix_data[i];
+        for (k = 0; k < MIX_BIT; k = k+1) begin
+            n_length[k] = length[k];
+            n_addr[k] = addr[k];
+            n_mix_data[k] = mix_data[k];
         end
         n_mix_amount = mix_amount;
         n_new_amount = new_amount;
@@ -148,7 +148,8 @@ module MixCore (
                 end
             end
             DIVIDE: begin
-                n_mix_data[mix_counter] = mix_data[mix_counter] / $signed(mix_amount);
+                n_mix_data[mix_counter][31:16] = mix_data[mix_counter][31:16] / $signed(mix_amount);
+                n_mix_data[mix_counter][15:0] = mix_data[mix_counter][15:0] / $signed(mix_amount);
                 n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
@@ -207,9 +208,6 @@ module MixCore (
                 n_initialize = 3;
             end
         endcase
-        if (mix_amount == 0) begin
-            n_state = IDLE;
-            mix_done = 1;
-        end
+        if(mix_stop) n_state = IDLE;
     end
 endmodule
