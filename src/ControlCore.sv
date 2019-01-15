@@ -33,10 +33,13 @@ module ControlCore (
     assign control_mode = state;
     
     // see define for control state
-    logic REC, PLAY, STOP;
+    // Modify to GPIO
+    logic REC, PLAY, STOP, MIX, PITCH;
     assign REC = KEY[0];
     assign PLAY = KEY[1];
     assign STOP = KEY[2];
+    assign MIX = KEY[2];
+    assign PITCH = KEY[3];
     
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
@@ -51,11 +54,11 @@ module ControlCore (
     //assign mix_select[2] = 0;
     //assign mix_select[3] = 0;
     assign mix_select[4] = 0;
-    assign pitch_start = 0;
-    assign pitch_select[0] = 0;
-    assign pitch_select[1] = 0;
-    assign pitch_mode = 0;
-    assign pitch_speed = 0;
+    //assign pitch_start = 0;
+    //assign pitch_select[0] = 0;
+    //assign pitch_select[1] = 0;
+    //assign pitch_mode = 0;
+    //assign pitch_speed = 0;
     //assign record_select[0] = 0;
     assign record_select[1] = 0;
     assign record_pause = 0;
@@ -71,16 +74,21 @@ module ControlCore (
         n_state = state;
         record_start = 0;
         play_start = 0;
-		  mix_start = 0;
+		mix_start = 0;
+        pitch_start = 0
         record_stop = 0;
         play_stop = 0;
-		  mix_stop = 0;
+		mix_stop = 0;
 
         record_select[0] = 0;
-		  play_select = 0;
+		play_select = 0;
         for (i = 0; i < 5; i = i+1) begin
             mix_select[i] = 0;
         end
+        pitch_select[0] = 0;
+        pitch_select[0] = 0;
+        pitch_mode = 0;
+        pitch_speed = 0;
         mix_num = 4'd0;
 
         case(state)
@@ -91,8 +99,11 @@ module ControlCore (
                 if (PLAY) begin
                     n_state = control_PLAY;
                 end
-                if (SW[5]) begin
+                if (MIX) begin
                     n_state = control_MIX;
+                end
+                if (PITCH) begin
+                    n_state = control_PITCH;
                 end
             end
             control_REC: begin
@@ -131,6 +142,7 @@ module ControlCore (
             end
             control_MIX: begin
                 mix_start = 1;
+                // Modify to GPIO
                 case(KEY[3:0])
                     4'b0001: begin 
                         mix_select[0] = CHUNK[0];
@@ -153,6 +165,16 @@ module ControlCore (
                     mix_stop = 1;
                 end
                 if (mix_done) begin
+                    n_state = control_IDLE;
+                end
+            end
+            control_PITCH: begin
+                pitch_start = 1;
+                pitch_speed = 4'b1011;
+                pitch_mode = 0;
+                pitch_select[0] = CHUNK[0];
+                pitch_select[1] = CHUNK[1];
+                if (pitch_done) begin
                     n_state = control_IDLE;
                 end
             end
