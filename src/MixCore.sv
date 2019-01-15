@@ -114,23 +114,25 @@ module MixCore (
             READ_LENGTH: begin
                 mix_read = 1;
                 mix_addr = addr[initialize];
-                n_length[initialize] = addr[initialize] + mix_readdata[22:0] + 1;
                 if (mix_sdram_finished) begin
+                    n_length[initialize] = addr[initialize] + mix_readdata[22:0];
                     n_state = READ;
                     n_mix_counter = 0;
                     n_addr[initialize] = addr[initialize] + 1;
+
+                    n_mix_amount = 0;
                 end
             end
             READ: begin
-                n_mix_data[mix_counter] = 0;
                 mix_addr = addr[mix_counter];
                 if (length[mix_counter] != addr[mix_counter]) begin
                     mix_read = 1;
-                    n_mix_data[mix_counter] = $signed(mix_readdata);
                     if (mix_sdram_finished) begin
+                        n_mix_data[mix_counter] = $signed(mix_readdata);
                         n_state = READ;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
+                        n_mix_amount = mix_amount + 1;
                         if (mix_counter == 3) begin
                             n_state = DIVIDE;
                             n_mix_counter = 0;
@@ -139,31 +141,32 @@ module MixCore (
                     end
                 end
                 else begin
+                    n_mix_data[mix_counter] = 0;
                     n_mix_counter = mix_counter + 1;
                     if (mix_counter == 3) begin
                         n_state = DIVIDE;
-                        n_mix_counter = 0;
-                        n_new_amount = 0;
+                        //n_mix_counter = 0;
+                        //n_new_amount = 0;
                     end
                 end
             end
             DIVIDE: begin
-                n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]) / $signed(mix_amount);
-                n_mix_data[mix_counter][15:0] = $signed(mix_data[mix_counter][15:0]) / $signed(mix_amount);
+                n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]);// / $signed(mix_amount);
+                n_mix_data[mix_counter][15:0] = $signed(mix_data[mix_counter][15:0]);// / $signed(mix_amount);
                 n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
                     n_mix_counter = 0;
                 end
-                if (addr[mix_counter] != length[mix_counter]) begin
+                /*if (addr[mix_counter] != length[mix_counter]) begin
                     n_new_amount = new_amount + 1;
-                end
+                end*/
             end
             ADD: begin
                 n_mix_audio_data[31:16] = $signed(mix_data[0][31:16]) + $signed(mix_data[1][31:16]) + $signed(mix_data[2][31:16]) + $signed(mix_data[3][31:16]);
                 n_mix_audio_data[15:0] = $signed(mix_data[0][15:0]) + $signed(mix_data[1][15:0]) + $signed(mix_data[2][15:0]) + $signed(mix_data[3][15:0]);
                 n_state = PLAY;
-                n_mix_amount = new_amount;
+                //n_mix_amount = new_amount;
             end
             PLAY: begin
                 mix_audio_valid = 1;
@@ -171,6 +174,7 @@ module MixCore (
                     if ( counter == 1 ) begin
                         n_state = READ;
                         n_counter = 0;
+                        n_mix_amount = 0;
                     end else begin
                         n_counter = 1;
                     end
@@ -187,25 +191,25 @@ module MixCore (
             5'b0001: begin
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
-                n_mix_amount = mix_amount + 1;
+                //n_mix_amount = mix_amount + 1;
                 n_initialize = 0;
             end
             5'b0010: begin
                 n_addr[1] = mix_select[1];
                 n_state = READ_LENGTH;
-                n_mix_amount = mix_amount + 1;
+                //n_mix_amount = mix_amount + 1;
                 n_initialize = 1;
             end
             5'b0100: begin
                 n_addr[2] = mix_select[2];                
                 n_state = READ_LENGTH; 
-                n_mix_amount = mix_amount + 1;
+                //n_mix_amount = mix_amount + 1;
                 n_initialize = 2;
             end
             5'b1000: begin
                 n_addr[3] = mix_select[3];                
                 n_state = READ_LENGTH;  
-                n_mix_amount = mix_amount + 1;
+                //n_mix_amount = mix_amount + 1;
                 n_initialize = 3;
             end
         endcase
