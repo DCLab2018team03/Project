@@ -30,14 +30,18 @@ module MixCore (
     // To Audio
     output logic mix_audio_valid,
     output logic [31:0] mix_audio_data,
-    input  logic mix_audio_ready
+    input  logic mix_audio_ready,
+
+    output [2:0] debug
 );
+
+    assign debug = state;
 
     localparam MIX_BIT = 4;
     localparam LG_MIX_BIT = 2;
 
     logic [2:0] state, n_state;
-    logic [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
+    logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
     logic [LG_MIX_BIT - 1:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter, new_amount, n_new_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize;
@@ -104,10 +108,13 @@ module MixCore (
         mix_done = 0;
         mix_audio_valid = 0;
 
+        mix_addr = 0;
+
         case(state)
             READ_LENGTH: begin
                 mix_read = 1;
-                n_length[initialize] = addr[initialize] + mix_readdata + 1;
+                mix_addr = addr[initialize];
+                n_length[initialize] = addr[initialize] + mix_readdata[22:0] + 1;
                 if (mix_sdram_finished) begin
                     n_state = READ;
                     n_mix_counter = 0;
@@ -115,31 +122,40 @@ module MixCore (
                 end
             end
             READ: begin
-                n_mix_data = 0;
+                n_mix_data[mix_counter] = 0;
+                mix_addr = addr[mix_counter];
                 if (length[mix_counter] != addr[mix_counter]) begin
                     mix_read = 1;
-                    n_mix_data[mix_counter] = mix_readdata;
+                    n_mix_data[mix_counter] = $signed(mix_readdata);
                     if (mix_sdram_finished) begin
                         n_state = READ;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
+                        n_mix_counter = mix_counter + 1;
+                        if (mix_counter == 3) begin
+                            n_state = DIVIDE;
+                            n_mix_counter = 0;
+                            n_new_amount = 0;
+                        end
                     end
                 end
-                n_mix_counter = mix_counter + 1;
-                if (mix_counter == 3) begin
-                    n_state = MIX;
-                    n_mix_counter = 0;
-                    n_new_amount = 4;
+                else begin
+                    n_mix_counter = mix_counter + 1;
+                    if (mix_counter == 3) begin
+                        n_state = DIVIDE;
+                        n_mix_counter = 0;
+                        n_new_amount = 0;
+                    end
                 end
             end
             DIVIDE: begin
-                n_mix_data[mix_counter] = mix_data[mix_counter] / mix_amount;
-                n_mix_counter = mix_counter + 1
+                n_mix_data[mix_counter] = mix_data[mix_counter] / $signed(mix_amount);
+                n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
                     n_mix_counter = 0;
                 end
-                if (addr[mix_counter] == length[mix_counter]) begin
-                    n_new_amount = new_amount - 1;
+                if (addr[mix_counter] != length[mix_counter]) begin
+                    n_new_amount = new_amount + 1;
                 end
             end
             ADD: begin
@@ -152,6 +168,7 @@ module MixCore (
                 if (mix_audio_ready) begin
                     if ( counter == 1 ) begin
                         n_state = READ;
+                        n_counter = 0;
                     end else begin
                         n_counter = 1;
                     end
@@ -164,7 +181,7 @@ module MixCore (
                 n_state = state;
             end
         endcase
-        case(mix_num[3:0]) begin
+        case(mix_num[3:0])
             5'b0001: begin
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
@@ -189,7 +206,7 @@ module MixCore (
                 n_mix_amount = mix_amount + 1;
                 n_initialize = 3;
             end
-        end
+        endcase
         if (mix_amount == 0) begin
             n_state = IDLE;
             mix_done = 1;

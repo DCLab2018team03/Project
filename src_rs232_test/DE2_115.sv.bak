@@ -230,16 +230,6 @@ module DE2_115 (
     wire            new_sdram_controller_0_s1_readdatavalid;
     wire            new_sdram_controller_0_s1_waitrequest;
     logic [3:0] KEY_debounced;
-    
-    wire uart_0_s1_address;                                //                                   uart_0_s1.address
-	wire uart_0_s1_begintransfer;                          //                                            .begintransfer
-	wire uart_0_s1_chipselect;                             //                                            .chipselect
-	wire uart_0_s1_read_n;                                 //                                            .read_n
-	wire uart_0_s1_write_n;                                //                                            .write_n
-	wire uart_0_s1_writedata;                              //                                            .writedata
-	wire uart_0_s1_readdata;                               //                                            .readdata
-	wire uart_0_s1_dataavailable;                          //                                            .dataavailable
-	wire uart_0_s1_readyfordata;                            //                                            .readyfordata
 
     Total total(
         .audio_0_external_interface_ADCDAT(AUD_ADCDAT),   // audio_0_external_interface.ADCDAT
@@ -282,19 +272,7 @@ module DE2_115 (
         .new_sdram_controller_0_wire_dqm           (DRAM_DQM),
         .new_sdram_controller_0_wire_ras_n         (DRAM_RAS_N),
         .new_sdram_controller_0_wire_we_n          (DRAM_WE_N),
-        .sys_sdram_pll_0_sdram_clk_clk             (DRAM_CLK),
-        // RS232
-		.uart_0_external_connection_rxd(UART_RXD),                   //                  uart_0_external_connection.rxd
-		.uart_0_external_connection_txd(UART_TXD),                  //                                            .txd
-        .uart_0_s1_address(uart_0_s1_address),                                //                                   uart_0_s1.address
-		.uart_0_s1_begintransfer(uart_0_s1_begintransfer),                          //                                            .begintransfer
-		.uart_0_s1_chipselect(uart_0_s1_chipselect),                             //                                            .chipselect
-		.uart_0_s1_read_n(uart_0_s1_read_n),                                 //                                            .read_n
-		.uart_0_s1_write_n(uart_0_s1_write_n),                                //                                            .write_n
-		.uart_0_s1_writedata(uart_0_s1_writedata),                              //                                            .writedata
-		.uart_0_s1_readdata(uart_0_s1_readdata),                               //                                            .readdata
-		.uart_0_s1_dataavailable(uart_0_s1_dataavailable),                          //                                            .dataavailable
-		.uart_0_s1_readyfordata(uart_0_s1_readyfordata)  
+        .sys_sdram_pll_0_sdram_clk_clk             (DRAM_CLK)
     );
 
 	AcappellaCore acappellacore(
@@ -330,17 +308,7 @@ module DE2_115 (
         .new_sdram_controller_0_s1_write_n         (new_sdram_controller_0_s1_write_n),
         .new_sdram_controller_0_s1_readdata        (new_sdram_controller_0_s1_readdata),
         .new_sdram_controller_0_s1_readdatavalid   (new_sdram_controller_0_s1_readdatavalid),
-        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest),
-        // RS232
-        .avm_address(uart_0_s1_address),                                //                                   uart_0_s1.address
-		.uart_0_s1_begintransfer(uart_0_s1_begintransfer),                          //                                            .begintransfer
-		.uart_0_s1_chipselect(uart_0_s1_chipselect),                             //                                            .chipselect
-		.avm_read(uart_0_s1_read_n),                                 //                                            .read_n
-		.avm_write(uart_0_s1_write_n),                                //                                            .write_n
-		.avm_writedata(uart_0_s1_writedata),                              //                                            .writedata
-		.avm_readdata(uart_0_s1_readdata),                               //                                            .readdata
-		.uart_0_s1_dataavailable(uart_0_s1_dataavailable),                          //                                            .dataavailable
-		.uart_0_s1_readyfordata(uart_0_s1_readyfordata)                            //                                            .readyfordata
+        .new_sdram_controller_0_s1_waitrequest     (new_sdram_controller_0_s1_waitrequest)
 	);
 
     Debounce deb0(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));

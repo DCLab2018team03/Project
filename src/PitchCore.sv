@@ -36,7 +36,7 @@ module PitchCore (
     output logic        SRAM_OE_N,   // SRAM Output Enable
     output logic        SRAM_LB_N,   // SRAM Low-byte Data Mask 
     output logic        SRAM_UB_N    // SRAM High-byte Data Mask
-);  
+);  /*
     localparam SRAM_NOT_SELECT = 5'b01000;
     localparam SRAM_READ       = 5'b10000;
     localparam SRAM_WRITE      = 5'b00000;
@@ -539,5 +539,5 @@ module PitchCore (
                 end
             end
         endcase
-    end
+    end*/
 endmodule

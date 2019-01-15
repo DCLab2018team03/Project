@@ -60,20 +60,27 @@ module ControlCore (
     assign record_select[1] = 0;
     assign record_pause = 0;
     //assign record_stop = 0;
-    assign play_select = 0;
+    //assign play_select = 0;
     assign play_pause = 0;
-    assign play_stop = 0;
+    //assign play_stop = 0;
+
+    int i;
 
     always_comb begin
         
         n_state = state;
         record_start = 0;
         play_start = 0;
+		  mix_start = 0;
         record_stop = 0;
-        play_stop = 1;
+        play_stop = 0;
+		  mix_stop = 0;
 
         record_select[0] = 0;
-        mix_select[4:0] = {5{23'h7FFFFF}};
+		  play_select = 0;
+        for (i = 0; i < 5; i = i+1) begin
+            mix_select[i] = 0;
+        end
         mix_num = 4'd0;
 
         case(state)
@@ -90,14 +97,14 @@ module ControlCore (
             end
             control_REC: begin
                 record_start = 1;
-                case(SW[4:0]) begin
+                case(SW[4:0])
                     5'b00001: record_select[0] = CHUNK[0];
                     5'b00010: record_select[0] = CHUNK[1];
                     5'b00100: record_select[0] = CHUNK[2];
                     5'b01000: record_select[0] = CHUNK[3];
                     5'b10000: record_select[0] = CHUNK[4];
                     default:  record_select[0] = 0;
-                end
+                endcase
                 if (STOP) begin
                     record_stop = 1;
                 end
@@ -107,14 +114,14 @@ module ControlCore (
             end
             control_PLAY: begin
                 play_start = 1;
-                case(SW[4:0]) begin
+                case(SW[4:0])
                     5'b00001: play_select = CHUNK[0];
                     5'b00010: play_select = CHUNK[1];
                     5'b00100: play_select = CHUNK[2];
                     5'b01000: play_select = CHUNK[3];
                     5'b10000: play_select = CHUNK[4];
                     default:  play_select = 0;
-                end
+                endcase
                 if (STOP) begin
                     play_stop = 1;
                 end
@@ -124,7 +131,7 @@ module ControlCore (
             end
             control_MIX: begin
                 mix_start = 1;
-                case(KEY[3:0]) begin
+                case(KEY[3:0])
                     4'b0001: begin 
                         mix_select[0] = CHUNK[0];
                         mix_num[0] = 1;
@@ -141,7 +148,7 @@ module ControlCore (
                         mix_select[3] = CHUNK[4];
                         mix_num[3] = 1;
                     end
-                end
+                endcase
                 if (SW[16]) begin
                     mix_stop = 1;
                 end

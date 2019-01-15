@@ -1,0 +1,73 @@
+Info: Starting: Create block symbol file (.bsf)
+Info: qsys-generate C:\Users\question_mark\Documents\GitHub\Project\src_rs232_test\Total.qsys --block-symbol-file --output-directory=C:\Users\question_mark\Documents\GitHub\Project\src_rs232_test\Total --family="Cyclone IV E" --part=EP4CE115F29C7
+Progress: Loading src_rs232_test/Total.qsys
+Progress: Reading input file
+Progress: Adding altpll_0 [altpll 15.0]
+Progress: Parameterizing module altpll_0
+Progress: Adding audio_0 [altera_up_avalon_audio 15.0]
+Progress: Parameterizing module audio_0
+Progress: Adding audio_and_video_config_0 [altera_up_avalon_audio_and_video_config 15.0]
+Progress: Parameterizing module audio_and_video_config_0
+Progress: Adding audio_pll_0 [altera_up_avalon_audio_pll 15.0]
+Progress: Parameterizing module audio_pll_0
+Progress: Adding clk_0 [clock_source 15.0]
+Progress: Parameterizing module clk_0
+Progress: Adding new_sdram_controller_0 [altera_avalon_new_sdram_controller 15.0]
+Progress: Parameterizing module new_sdram_controller_0
+Progress: Adding sys_sdram_pll_0 [altera_up_avalon_sys_sdram_pll 15.0]
+Progress: Parameterizing module sys_sdram_pll_0
+Progress: Adding uart_0 [altera_avalon_uart 15.0]
+Progress: Parameterizing module uart_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: Total.audio_and_video_config_0: The data format must be Left Justified, if using the Altera UP Audio IP Core.
+Warning: Total.uart_0: No Baud rate validation because the clock rate is unknown
+Warning: Total.altpll_0: altpll_0.areset_conduit must be exported, or connected to a matching conduit.
+Warning: Total.altpll_0: altpll_0.locked_conduit must be exported, or connected to a matching conduit.
+Warning: Total.altpll_0: altpll_0.phasedone_conduit must be exported, or connected to a matching conduit.
+Warning: Total.uart_0: Interrupt sender uart_0.irq is not connected to an interrupt receiver
+Warning: Total.altpll_0: altpll_0.pll_slave must be connected to an Avalon-MM master
+Warning: Total.audio_and_video_config_0: audio_and_video_config_0.avalon_av_config_slave must be connected to an Avalon-MM master
+Info: ip-generate succeeded.
+Info: Finished: Create block symbol file (.bsf)
+Info: 
+Info: Starting: Create HDL design files for synthesis
+Info: qsys-generate C:\Users\question_mark\Documents\GitHub\Project\src_rs232_test\Total.qsys --synthesis=VERILOG --output-directory=C:\Users\question_mark\Documents\GitHub\Project\src_rs232_test\Total\synthesis --family="Cyclone IV E" --part=EP4CE115F29C7
+Progress: Loading src_rs232_test/Total.qsys
+Progress: Reading input file
+Progress: Adding altpll_0 [altpll 15.0]
+Progress: Parameterizing module altpll_0
+Progress: Adding audio_0 [altera_up_avalon_audio 15.0]
+Progress: Parameterizing module audio_0
+Progress: Adding audio_and_video_config_0 [altera_up_avalon_audio_and_video_config 15.0]
+Progress: Parameterizing module audio_and_video_config_0
+Progress: Adding audio_pll_0 [altera_up_avalon_audio_pll 15.0]
+Progress: Parameterizing module audio_pll_0
+Progress: Adding clk_0 [clock_source 15.0]
+Progress: Parameterizing module clk_0
+Progress: Adding new_sdram_controller_0 [altera_avalon_new_sdram_controller 15.0]
+Progress: Parameterizing module new_sdram_controller_0
+Progress: Adding sys_sdram_pll_0 [altera_up_avalon_sys_sdram_pll 15.0]
+Progress: Parameterizing module sys_sdram_pll_0
+Progress: Adding uart_0 [altera_avalon_uart 15.0]
+Progress: Parameterizing module uart_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: Total.audio_and_video_config_0: The data format must be Left Justified, if using the Altera UP Audio IP Core.
+Warning: Total.uart_0: No Baud rate validation because the clock rate is unknown
+Warning: Total.altpll_0: altpll_0.areset_conduit must be exported, or connected to a matching conduit.
+Warning: Total.altpll_0: altpll_0.locked_conduit must be exported, or connected to a matching conduit.
+Warning: Total.altpll_0: altpll_0.phasedone_conduit must be exported, or connected to a matching conduit.
+Warning: Total.uart_0: Interrupt sender uart_0.irq is not connected to an interrupt receiver
+Warning: Total.altpll_0: altpll_0.pll_slave must be connected to an Avalon-MM master
+Warning: Total.audio_and_video_config_0: audio_and_video_config_0.avalon_av_config_slave must be connected to an Avalon-MM master
+Info: Total: Generating Total "Total" for QUARTUS_SYNTH
+Error: Cannot find clock for uart_0.clk. If uart_0.clk is exported please use a clock bridge and reset bridge instead of a clock source. Reset synchronizer, rst_controller_001, may not function if not connected to a clock source. To rectify this error a clock must be manually attached to the clock port of rst_controller_001 in the generated RTL.
+Error: Generation stopped, 9 or more modules remaining
+Info: Total: Done "Total" with 9 modules, 1 files
+Error: ip-generate failed with exit code 1: 2 Errors, 7 Warnings
+Info: Finished: Create HDL design files for synthesis

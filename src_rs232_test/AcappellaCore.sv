@@ -30,8 +30,14 @@ module AcappellaCore (
 	output logic        new_sdram_controller_0_s1_write_n,                //                   .write_n
 	input  logic [31:0] new_sdram_controller_0_s1_readdata,               //                   .readdata
 	input  logic        new_sdram_controller_0_s1_readdatavalid,          //                   .readdatavalid
-	input  logic        new_sdram_controller_0_s1_waitrequest             //                   .waitrequest
-
+	input  logic        new_sdram_controller_0_s1_waitrequest,             //                   .waitrequest
+    // RS232
+    output [4:0] avm_address,
+    output avm_read,
+    input [31:0] avm_readdata,
+    output avm_write,
+    output [31:0] avm_writedata,
+    input avm_waitrequest
 );
     logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;

@@ -29,8 +29,12 @@ module PlayCore (
     // To audio
     output logic play_audio_valid,
     output logic [31:0] play_audio_data,
-    input  logic play_audio_ready
+    input  logic play_audio_ready,
+
+    output [1:0] debug
 );
+    assign debug = state;
+
     logic [1:0] state, n_state;
     localparam IDLE = 2'b00;
     localparam READ = 2'b01;
@@ -87,7 +91,7 @@ module PlayCore (
             end
             READ_LENGTH: begin
                 play_read = 1;
-                n_audio_length = play_select + play_readdata + 1;
+                n_audio_length = play_select + play_readdata[22:0] + 1;
                 if (play_sdram_finished) begin
                     n_state = READ;
                     n_counter = 0;
