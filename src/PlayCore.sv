@@ -15,16 +15,19 @@ module PlayCore (
     input i_rst,
     // to controller
     input  logic play_start,
-    input  logic [22:0] play_select,
+    input  logic [22:0] play_select [1:0],
     input  logic play_pause,
     input  logic play_stop,
     output logic play_done,
+    input  logic [1:0] play_num, // 01 for play only, 10 for store only, 11 for both
 
     // To SDRAM
     output logic play_read,
     output logic [22:0] play_addr,
     input  logic [31:0] play_readdata,
     input  logic play_sdram_finished,
+    output logic play_write,
+    output logic [31:0] play_writedata,
 
     // To audio
     output logic play_audio_valid,

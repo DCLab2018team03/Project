@@ -25,10 +25,11 @@ module ControlCore (
     output logic record_stop,
     input  logic record_done,
     output logic play_start,
-    output logic [22:0] play_select,
+    output logic [22:0] play_select [1:0],
     output logic play_pause,
     output logic play_stop,
     input  logic play_done,
+    output logic play_num,
     output [3:0] debug
 );
     assign debug = state;
@@ -129,13 +130,14 @@ module ControlCore (
             control_PLAY: begin
                 play_start = 1;
                 case(SW[4:0])
-                    5'b00001: play_select = CHUNK[0];
-                    5'b00010: play_select = CHUNK[1];
-                    5'b00100: play_select = CHUNK[2];
-                    5'b01000: play_select = CHUNK[3];
-                    5'b10000: play_select = CHUNK[4];
-                    default:  play_select = 0;
+                    5'b00001: play_select[1] = CHUNK[0];
+                    5'b00010: play_select[1] = CHUNK[1];
+                    5'b00100: play_select[1] = CHUNK[2];
+                    5'b01000: play_select[1] = CHUNK[3];
+                    5'b10000: play_select[1] = CHUNK[4];
+                    default:  play_select[1] = 0;
                 endcase
+
                 if (STOP) begin
                     play_stop = 1;
                 end
