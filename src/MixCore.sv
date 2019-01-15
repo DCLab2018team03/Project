@@ -42,6 +42,7 @@ module MixCore (
 
     logic [2:0] state, n_state;
     logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
+    logic [22:0] n_mix_addr;
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
     logic signed [LG_MIX_BIT:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter, new_amount, n_new_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize;
@@ -53,11 +54,11 @@ module MixCore (
     parameter READ_LENGTH = 3'd1;
     parameter READ  = 3'd2;
     parameter DIVIDE = 3'd3;
-    parameter ADD   = 3'd6;
-    parameter PLAY  = 3'd4;
-    parameter WRITE = 3'd5;
+    parameter ADD   = 3'd4;
+    parameter PLAY  = 3'd5;
+    parameter WRITE = 3'd6;
 
-    integer i, j ,k; 
+    integer i, j ,k, l, m; 
 
     always_ff @(posedge i_clk or posedge i_rst) begin
         if ( i_rst ) begin
@@ -67,6 +68,7 @@ module MixCore (
                 addr[i] <= 0;
                 mix_data[i] <= 0;
             end
+            mix_addr <= 0;
             mix_amount <= 0;
             new_amount <= 0;
             mix_counter <= 0;
@@ -80,6 +82,7 @@ module MixCore (
                 addr[j] <= n_addr[j]; // data length (stop when eaual to length)
                 mix_data[j] <= n_mix_data[j]; // data 
             end
+            mix_addr <= n_mix_addr;
             mix_amount <= n_mix_amount;  // how many data is mixing now
             new_amount <= n_new_amount;  // update new data amount
             mix_counter <= n_mix_counter; // which data is processing now
@@ -97,6 +100,7 @@ module MixCore (
             n_addr[k] = addr[k];
             n_mix_data[k] = mix_data[k];
         end
+        n_mix_addr = mix_addr;
         n_mix_amount = mix_amount;
         n_new_amount = new_amount;
         n_mix_counter = mix_counter;
@@ -108,33 +112,31 @@ module MixCore (
         mix_done = 0;
         mix_audio_valid = 0;
 
-        mix_addr = 0;
 
         case(state)
             IDLE: begin
-                for (k = 0; k < MIX_BIT; k = k+1) begin
-                    n_length[k] = 0;
-                    n_addr[k] = 0;
-                    n_mix_data[k] = 0;
+                for (l = 0; l < MIX_BIT; l = l+1) begin
+                    n_length[l] = 0;
+                    n_addr[l] = 0;
+                    n_mix_data[l] = 0;
                 end
             end
             READ_LENGTH: begin
                 mix_read = 1;
-                mix_addr = addr[initialize];
                 if (mix_sdram_finished) begin
                     n_length[initialize] = addr[initialize] + mix_readdata[22:0];
                     n_state = READ;
                     n_mix_counter = 0;
                     n_addr[initialize] = addr[initialize] + 1;
-
+                    n_mix_addr = addr[0]; // wrong for 1 32byte but ok
                     n_mix_amount = 0;
                 end
             end
             READ: begin
-                mix_addr = addr[mix_counter];
-                if (length[mix_counter] != addr[mix_counter]) begin
+                if (length[mix_counter] > addr[mix_counter]) begin
                     mix_read = 1;
                     if (mix_sdram_finished) begin
+                        n_mix_addr = addr[mix_counter + 1];
                         n_mix_data[mix_counter] = $signed(mix_readdata);
                         n_state = READ;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
@@ -148,6 +150,7 @@ module MixCore (
                     end
                 end
                 else begin
+                    n_mix_addr = addr[mix_counter + 1];
                     n_mix_data[mix_counter] = 0;
                     n_mix_counter = mix_counter + 1;
                     if (mix_counter == 3) begin
@@ -165,9 +168,14 @@ module MixCore (
                     n_state = ADD;
                     n_mix_counter = 0;
                 end
-                /*if (addr[mix_counter] != length[mix_counter]) begin
-                    n_new_amount = new_amount + 1;
-                end*/
+                if (mix_amount == 0) begin
+                    for (m = 0; m < MIX_BIT; m = m+1) begin
+                        n_length[m] = 0;
+                        n_addr[m] = 0;
+                        n_mix_data[m] = 0;
+                    end
+                    n_state = IDLE;
+                end
             end
             ADD: begin
                 n_mix_audio_data[31:16] = $signed(mix_data[0][31:16]) + $signed(mix_data[1][31:16]) + $signed(mix_data[2][31:16]) + $signed(mix_data[3][31:16]);
@@ -180,6 +188,7 @@ module MixCore (
                 if (mix_audio_ready) begin
                     if ( counter == 1 ) begin
                         n_state = READ;
+                        n_mix_addr = addr[0];
                         n_counter = 0;
                         n_mix_amount = 0;
                     end else begin
@@ -196,24 +205,28 @@ module MixCore (
         endcase
         case(mix_num[3:0])
             5'b0001: begin
+                n_mix_addr = mix_select[0];
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
                 //n_mix_amount = mix_amount + 1;
                 n_initialize = 0;
             end
             5'b0010: begin
+                n_mix_addr = mix_select[1];
                 n_addr[1] = mix_select[1];
                 n_state = READ_LENGTH;
                 //n_mix_amount = mix_amount + 1;
                 n_initialize = 1;
             end
             5'b0100: begin
+                n_mix_addr = mix_select[2];                
                 n_addr[2] = mix_select[2];                
                 n_state = READ_LENGTH; 
                 //n_mix_amount = mix_amount + 1;
                 n_initialize = 2;
             end
             5'b1000: begin
+                n_mix_addr = mix_select[3];                
                 n_addr[3] = mix_select[3];                
                 n_state = READ_LENGTH;  
                 //n_mix_amount = mix_amount + 1;
