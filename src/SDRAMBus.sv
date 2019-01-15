@@ -34,16 +34,20 @@ module SDRAMBus (
     assign new_sdram_controller_0_s1_writedata = sdram_writedata;
     
     logic [1:0] state, n_state;
+    logic [1:0] wait_counter, n_wait_counter;
     assign debug = state;
     localparam IDLE  = 2'b00;
     localparam READ  = 2'b01;
+    localparam READ_WAIT = 2'b11;
     localparam WRITE = 2'b10;
 
     always_ff @(posedge i_clk or posedge i_rst) begin
         if (i_rst) begin
             state <= IDLE;
+            wait_counter <= 0;
         end else begin
             state <= n_state;
+            wait_counter <= n_wait_counter;
         end
     end
 
@@ -53,6 +57,7 @@ module SDRAMBus (
         sdram_finished = 0;
         new_sdram_controller_0_s1_read_n = 1;
         new_sdram_controller_0_s1_write_n = 1;
+        n_wait_counter = 0;
         
         case(state)
             IDLE: begin
@@ -67,14 +72,21 @@ module SDRAMBus (
                 new_sdram_controller_0_s1_read_n = 0;
                 if (!new_sdram_controller_0_s1_waitrequest && new_sdram_controller_0_s1_readdatavalid) begin
                     sdram_finished = 1;
-                    n_state = IDLE;
+                    n_wait_counter = 0;
+                    n_state = READ_WAIT;
                 end
                 if (!sdram_read) begin
                     n_state = IDLE;
                 end
             end
+            READ_WAIT: begin
+                if (wait_counter == 3) begin
+                    n_state = IDLE;
+                end
+                n_wait_counter = wait_counter + 1;
+            end
             WRITE: begin
-                new_sdram_controller_0_s1_write_n = 1;
+                new_sdram_controller_0_s1_write_n = 0;
                 if (!new_sdram_controller_0_s1_waitrequest) begin
                     sdram_finished = 1;
                     n_state = IDLE;
@@ -83,7 +95,6 @@ module SDRAMBus (
                     n_state = IDLE;
                 end
             end
-            default: n_state = state;
         endcase
     end
 endmodule
