@@ -39,7 +39,7 @@ module AcappellaCore (
     output        SRAM_CE_N,   // SRAM Chip Enable
     output        SRAM_UB_N,   // SRAM High-byte Data Mask 
     output        SRAM_LB_N,   // SRAM Low-byte Data Mask 
-    input  [11:0]  button_pushed
+    input  [13:0]  button_pushed
 );
     logic [3:0] debug;
 
@@ -62,9 +62,9 @@ module AcappellaCore (
     );
 
     logic mix_start, mix_stop, mix_done;
-    logic [22:0] mix_select [8:0]; 
-    logic [8:0] mix_num;
-    logic [7:0] mix_loop;
+    logic [22:0] mix_select [16:0]; 
+    logic [16:0] mix_num;
+    logic [15:0] mix_loop;
     logic mix_read, mix_write, mix_sdram_finished;
     logic [22:0] mix_addr;
     logic [31:0] mix_readdata, mix_writedata;
