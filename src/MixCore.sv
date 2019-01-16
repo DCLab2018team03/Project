@@ -176,8 +176,8 @@ module MixCore (
                     end
                 end
                 else begin
-                    if (mix_loop[counter]) begin
-                        n_addr[counter] = CHUNK[counter] + 1;
+                    if (mix_loop[mix_counter]) begin
+                        n_addr[mix_counter] = CHUNK[mix_counter] + 1;
                     end
                     n_mix_data[mix_counter] = 0;
                     n_mix_counter = mix_counter + 1;
@@ -245,6 +245,7 @@ module MixCore (
                     mix_addr = write_addr;
                     mix_write = 1;
                     mix_writedata = mix_audio_data;
+                    n_state = WRITE;
                     if (mix_sdram_finished) begin
                         n_state = READ;
                         n_write_addr = write_addr + 1;
@@ -259,6 +260,7 @@ module MixCore (
                     mix_write = 1;
                     mix_done = 0;
                     mix_writedata = {9'd0, write_addr - mix_select[MIX_BIT] - 1};
+                    n_state = WRITE_LENGTH;
                     if (mix_sdram_finished) begin
                         n_state = IDLE;
                         mix_done = 1;
