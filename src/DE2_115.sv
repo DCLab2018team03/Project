@@ -231,8 +231,8 @@ module DE2_115 (
     wire            new_sdram_controller_0_s1_waitrequest;
     logic [3:0] KEY_debounced;
 
-    logic [11:0] button_pushed;
-
+    logic [13:0] button_pushed;
+    logic hex_page;
     Total total(
         .audio_0_external_interface_ADCDAT(AUD_ADCDAT),   // audio_0_external_interface.ADCDAT
 		.audio_0_external_interface_ADCLRCK(AUD_ADCLRCK), //                           .ADCLRCK
@@ -284,6 +284,7 @@ module DE2_115 (
 		.KEY(KEY_debounced),
         .SW(SW),
         .LEDG(LEDG),
+        .hex_page(hex_page),
         // avalon_audio_slave
         // avalon_left_channel_source
 		.from_adc_left_channel_ready(w_adc_left_ready),
@@ -331,11 +332,11 @@ module DE2_115 (
 	);*/
 	//assign GPIO[11:0] = rst_main ? 12'b0 : 12'bz;
 	assign LEDR[17:0] = ~GPIO[17:0];
-    Debounce deb12(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
+    /*Debounce deb12(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
     Debounce deb13(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
     Debounce deb14(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
     Debounce deb15(.i_in(KEY[3]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[3]));
-    
+    */
 	Debounce deb0(.i_in(GPIO[0]), .i_clk(CLOCK_50), .o_neg(button_pushed[0]));
     Debounce deb1(.i_in(GPIO[1]), .i_clk(CLOCK_50), .o_neg(button_pushed[1]));
     Debounce deb2(.i_in(GPIO[2]), .i_clk(CLOCK_50), .o_neg(button_pushed[2]));
@@ -348,5 +349,16 @@ module DE2_115 (
     Debounce deb9(.i_in(GPIO[9]), .i_clk(CLOCK_50), .o_neg(button_pushed[9]));
     Debounce deb10(.i_in(GPIO[10]), .i_clk(CLOCK_50), .o_neg(button_pushed[10]));
     Debounce deb11(.i_in(GPIO[11]), .i_clk(CLOCK_50), .o_neg(button_pushed[11]));
-	 
+    Debounce deb12(.i_in(GPIO[12]), .i_clk(CLOCK_50), .o_neg(button_pushed[12]));
+    Debounce deb13(.i_in(GPIO[13]), .i_clk(CLOCK_50), .o_neg(button_pushed[13]));
+
+    assign HEX1 = 7'b1111111;
+    assign HEX2 = 7'b1111111;
+    assign HEX3 = 7'b1111111;
+    assign HEX4 = 7'b1111111;
+    assign HEX5 = 7'b1111111;
+    assign HEX6 = 7'b1111111;
+    assign HEX7 = 7'b1111111;
+    assign HEX0 = hex_page ? 7'b0100100 : 7'b1111001;
+
 endmodule

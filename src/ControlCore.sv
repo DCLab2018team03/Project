@@ -32,12 +32,14 @@ module ControlCore (
     input  logic play_done,
     output logic play_record,
     output logic [1:0] play_speed,
-    output [3:0] debug
-);
+    output [3:0] debug,
+    output hex_page
+);   
     assign debug = state;
     logic [3:0] state, n_state;
     assign control_mode = state;
     logic page, n_page;
+    assign hex_page = page;
     logic [23:0] store_addr, n_store_addr;
     // see define for control state
     // Modify to GPIO
@@ -134,54 +136,54 @@ module ControlCore (
                 end
                 case (SW[15:0])
                     16'h0001: begin
-                        n_store_addr[0] = {1'b1,CHUNK[0]};
+                        n_store_addr = {1'b1,CHUNK[0]};
                     end
                     16'h0002: begin
-                        n_store_addr[1] = {1'b1,CHUNK[1]};
+                        n_store_addr = {1'b1,CHUNK[1]};
                     end
                     16'h0004: begin
-                        n_store_addr[2] = {1'b1,CHUNK[2]};
+                        n_store_addr = {1'b1,CHUNK[2]};
                     end
                     16'h0008: begin
-                        n_store_addr[3] = {1'b1,CHUNK[3]};
+                        n_store_addr = {1'b1,CHUNK[3]};
                     end
                     16'h0010: begin
-                        n_store_addr[4] = {1'b1,CHUNK[4]};
+                        n_store_addr = {1'b1,CHUNK[4]};
                     end
                     16'h0020: begin
-                        n_store_addr[5] = {1'b1,CHUNK[5]};
+                        n_store_addr = {1'b1,CHUNK[5]};
                     end
                     16'h0040: begin
-                        n_store_addr[6] = {1'b1,CHUNK[6]};
+                        n_store_addr = {1'b1,CHUNK[6]};
                     end
                     16'h0080: begin
-                        n_store_addr[7] = {1'b1,CHUNK[7]};
+                        n_store_addr = {1'b1,CHUNK[7]};
                     end
                     16'h0100: begin
-                        n_store_addr[8] = {1'b1,CHUNK[8]};
+                        n_store_addr = {1'b1,CHUNK[8]};
                     end
                     16'h0200: begin
-                        n_store_addr[9] = {1'b1,CHUNK[9]};
+                        n_store_addr = {1'b1,CHUNK[9]};
                     end
                     16'h0400: begin
-                        n_store_addr[10] = {1'b1,CHUNK[10]};
+                        n_store_addr = {1'b1,CHUNK[10]};
                     end
                     16'h0800: begin
-                        n_store_addr[11] = {1'b1,CHUNK[11]};
+                        n_store_addr = {1'b1,CHUNK[11]};
                     end
                     16'h1000: begin
-                        n_store_addr[12] = {1'b1,CHUNK[12]};
+                        n_store_addr = {1'b1,CHUNK[12]};
                     end
                     16'h2000: begin
-                        n_store_addr[13] = {1'b1,CHUNK[13]};
+                        n_store_addr = {1'b1,CHUNK[13]};
                     end
                     16'h4000: begin
-                        n_store_addr[14] = {1'b1,CHUNK[14]};
+                        n_store_addr = {1'b1,CHUNK[14]};
                     end
                     16'h8000: begin
-                        n_store_addr[15] = {1'b1,CHUNK[15]};
+                        n_store_addr = {1'b1,CHUNK[15]};
                     end
-                    default:  n_store_addr[0] = 24'd0;
+                    default:  n_store_addr = 24'd1;
                 endcase
             end
             control_REC: begin
@@ -250,7 +252,7 @@ module ControlCore (
                         record_select[0] = CHUNK[15];
                         record_start = 1;
                     end
-                    default:  record_select[0] = 0;
+                    default:  record_select[0] = 23'h020000;
                 endcase
                 if (STOP) begin
                     record_stop = 1;

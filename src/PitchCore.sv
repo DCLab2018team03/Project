@@ -36,7 +36,7 @@ module PitchCore (
     output logic        SRAM_OE_N,   // SRAM Output Enable
     output logic        SRAM_LB_N,   // SRAM Low-byte Data Mask 
     output logic        SRAM_UB_N    // SRAM High-byte Data Mask
-);  
+);  /*
     localparam SRAM_NOT_SELECT = 5'b01000;
     localparam SRAM_READ       = 5'b10000;
     localparam SRAM_WRITE      = 5'b00000;
@@ -252,7 +252,7 @@ module PitchCore (
                                 n_max_correlation_index_L = 0;
                                 n_max_correlation_index_R = 0;
                                 n_max_correlation_value = 33'h100000000;
-                                n_frame_size_not_enough = data_counter;*/
+                                n_frame_size_not_enough = data_counter;
                             end
                             else begin
                                 if (frame_counter == 0) begin
@@ -382,10 +382,10 @@ module PitchCore (
             CROSS_CORRELATION: begin
                 setSRAMenable(SRAM_READ);
                 if (!channelLR) begin
-                    n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter][31:16]) >>> 10;
+                    n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter][31:16]);
                 end
                 else begin
-                    n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter][15:0]) >>> 10;
+                    n_partial_product = partial_product + (SRAM_DQ * predict_frame[data_counter][15:0]);
                 end
                 n_data_counter = data_counter + 1;
                 n_SRAM_ADDR = SRAM_ADDR + 2;
@@ -422,10 +422,10 @@ module PitchCore (
                             n_state = PREDICT_NEXT_FRAME;
                             n_correlation_counter = 0;
                             if (!channelLR) begin
-                                n_SRAM_ADDR = 2*max_correlation_index_L + 2*H_s;
+                                n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize + 2*max_correlation_index_L + 2*H_s;
                             end
                             else begin
-                                n_SRAM_ADDR = 2*max_correlation_index_R + 2*H_s + 1;
+                                n_SRAM_ADDR = SRAM_ADDR +1 - 2*WindowSize + 2*max_correlation_index_R + 2*H_s;
                             end
                         end
                     end
@@ -450,7 +450,6 @@ module PitchCore (
                         n_state = APPLY_WINDOW;
                         n_data_counter = 0;
                         n_channelLR = 0;
-                        n_sramRW = 0;
                         n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - 2*H_s + 1;
                     end
                 end
@@ -469,11 +468,10 @@ module PitchCore (
                         end
                         else begin
                             n_state = APPLY_WINDOW;
-                            n_sramRW = 0;
                             n_max_correlation_value = 33'h100000000;
                             n_data_counter = 0;
                             n_channelLR = 0;
-                            n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - 2*H_s;
+                            n_SRAM_ADDR = SRAM_ADDR - 2*WindowSize - H_s;
                         end
                     end
                 end
@@ -580,5 +578,5 @@ module PitchCore (
                 end
             end
         endcase
-    end
+    end*/
 endmodule

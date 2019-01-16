@@ -3,6 +3,7 @@ module AcappellaCore (
     input  logic         i_rst,
     input [3:0] KEY,
     input [17:0] SW,
+    output logic hex_page,
 	output logic [7:0] LEDG,
     // avalon_audio_slave
     // avalon_left_channel_source
@@ -42,7 +43,6 @@ module AcappellaCore (
     input  [13:0]  button_pushed
 );
     logic [3:0] debug;
-
     logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
     logic [31:0] loaddata_writedata;
@@ -238,7 +238,8 @@ module AcappellaCore (
         .play_done(play_done),
         .play_record(play_record),
         .play_speed(play_speed),
-        .debug(debug)
+        .debug(debug),
+        .hex_page(hex_page)
     );
 
     logic sdram_read, sdram_write, sdram_finished;
