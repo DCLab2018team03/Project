@@ -14,8 +14,8 @@ module MixCore (
     input logic i_rst,
     // To controller
     input  logic mix_start,
-    input  logic [22:0] mix_select [4:0],
-    input  logic [4:0] mix_num,
+    input  logic [22:0] mix_select [8:0],
+    input  logic [8:0] mix_num,
     input  logic mix_stop,
     output logic mix_done,
 
@@ -37,8 +37,8 @@ module MixCore (
 
     //assign debug = state;
 
-    localparam MIX_BIT = 4;
-    localparam LG_MIX_BIT = 2;
+    localparam MIX_BIT = 8;
+    localparam LG_MIX_BIT = 3;
 
     logic [2:0] state, n_state;
     logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
@@ -124,15 +124,27 @@ module MixCore (
                 n_length[1] = 0;
                 n_length[2] = 0;
                 n_length[3] = 0;
+                n_length[4] = 0;
+                n_length[5] = 0;
+                n_length[6] = 0;
+                n_length[7] = 0;
                 n_addr[0] = 0;
                 n_addr[1] = 0;
                 n_addr[2] = 0;
                 n_addr[3] = 0;
+                n_addr[4] = 0;
+                n_addr[5] = 0;
+                n_addr[6] = 0;
+                n_addr[7] = 0;
                 n_mix_data[0] = 0;
                 n_mix_data[1] = 0;
                 n_mix_data[2] = 0;
                 n_mix_data[3] = 0;
-                n_write_addr = mix_select[4] + 1;
+                n_mix_data[4] = 0;
+                n_mix_data[5] = 0;
+                n_mix_data[6] = 0;
+                n_mix_data[7] = 0;
+                n_write_addr = mix_select[MIX_BIT] + 1;
             end
             READ_LENGTH: begin
                 mix_read = 1;
@@ -151,12 +163,12 @@ module MixCore (
                 if (length[mix_counter] != addr[mix_counter]) begin
                     mix_read = 1;
                     if (mix_sdram_finished) begin
-                        n_mix_data[mix_counter] = $signed(mix_readdata);
+                        n_mix_data[mix_counter] = mix_readdata;
                         n_state = READ;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
                         n_mix_amount = mix_amount + 1;
-                        if (mix_counter == 3) begin
+                        if (mix_counter == MIX_BIT - 1) begin
                             n_state = DIVIDE;
                             n_mix_counter = 0;
                         end
@@ -165,23 +177,39 @@ module MixCore (
                 else begin
                     n_mix_data[mix_counter] = 0;
                     n_mix_counter = mix_counter + 1;
-                    if (mix_counter == 3) begin
+                    if (mix_counter == MIX_BIT - 1) begin
                         n_state = DIVIDE;
                         n_mix_counter = 0;
                     end
                 end
             end
             DIVIDE: begin
+                if (mix_counter != 0) begin
+                    n_mix_audio_data[31:16] = mix_audio_data[31:16] + mix_data[mix_counter - 1][31:16];
+                    n_mix_audio_data[15:0] = mix_audio_data[15:0] + mix_data[mix_counter - 1][15:0];
+                end
                 case (mix_amount)
-                    3'd2:    n_mix_data[counter] = {1'b0, mix_data[counter][14], mix_data[counter][14:1]};
-                    3'd3:    n_mix_data[counter] = {1'b0, {2{mix_data[counter][14]}}, mix_data[counter][14:2]} + {1'b0, {4{mix_data[counter][14]}}, mix_data[counter][14:4]} + {1'b0, {6{mix_data[counter][14]}}, mix_data[counter][14:6]};
-                    3'd4:    n_mix_data[counter] = {1'b0, {2{mix_data[counter][14]}}, mix_data[counter][14:2]};
-                    default: n_mix_data[counter] = mix_data[counter];
+                    4'd2:    n_mix_data[mix_counter][15:0] = {1'b0, mix_data[mix_counter][14], mix_data[mix_counter][14:1]};
+                    4'd3:    n_mix_data[mix_counter][15:0] = {1'b0, {2{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:2]} + {1'b0, {4{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:4]} + {1'b0, {6{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:6]};
+                    4'd4:    n_mix_data[mix_counter][15:0] = {1'b0, {2{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:2]};
+                    4'd5:    n_mix_data[mix_counter][15:0] = {1'b0, {3{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:3]} + {1'b0, {4{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:4]} + {1'b0, {6{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:6]};
+                    4'd6:    n_mix_data[mix_counter][15:0] = {1'b0, {3{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:3]} + {1'b0, {5{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:5]} + {1'b0, {7{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:7]};
+                    4'd7:    n_mix_data[mix_counter][15:0] = {1'b0, {3{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:3]} + {1'b0, {6{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:6]} + {1'b0, {9{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:9]};
+                    4'd8:    n_mix_data[mix_counter][15:0] = {1'b0, {3{mix_data[mix_counter][14]}}, mix_data[mix_counter][14:3]};
+                    default: n_mix_data[mix_counter][15:0] = mix_data[mix_counter][15:0];
                 endcase
-                //n_mix_data[mix_counter][31:16] = {1'b0, mix_data[mix_counter][30], mix_data[mix_counter][30:17]};
-                //n_mix_data[mix_counter][15:0] = {1'b0, mix_data[mix_counter][14], mix_data[mix_counter][14:1]};
+                case (mix_amount)
+                    4'd2:    n_mix_data[mix_counter][31:16] = {1'b0, mix_data[mix_counter][30], mix_data[mix_counter][30:17]};
+                    4'd3:    n_mix_data[mix_counter][31:16] = {1'b0, {2{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:18]} + {1'b0, {4{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:20]} + {1'b0, {6{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:22]};
+                    4'd4:    n_mix_data[mix_counter][31:16] = {1'b0, {2{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:18]};
+                    4'd5:    n_mix_data[mix_counter][31:16] = {1'b0, {3{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:19]} + {1'b0, {4{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:20]} + {1'b0, {6{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:22]};
+                    4'd6:    n_mix_data[mix_counter][31:16] = {1'b0, {3{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:19]} + {1'b0, {5{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:21]} + {1'b0, {7{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:23]};
+                    4'd7:    n_mix_data[mix_counter][31:16] = {1'b0, {3{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:19]} + {1'b0, {6{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:22]} + {1'b0, {9{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:25]};
+                    4'd8:    n_mix_data[mix_counter][31:16] = {1'b0, {3{mix_data[mix_counter][30]}}, mix_data[mix_counter][30:19]};
+                    default: n_mix_data[mix_counter][31:16] = mix_data[mix_counter][31:16];
+                endcase
                 n_mix_counter = mix_counter + 1;
-                if (mix_counter == 3) begin
+                if (mix_counter == MIX_BIT - 1) begin
                     n_state = ADD;
                     n_mix_counter = 0;
                 end
@@ -190,8 +218,8 @@ module MixCore (
                 end
             end
             ADD: begin
-                n_mix_audio_data[31:16] = $signed(mix_data[0][31:16]) + $signed(mix_data[1][31:16]) + $signed(mix_data[2][31:16]) + $signed(mix_data[3][31:16]);
-                n_mix_audio_data[15:0] = $signed(mix_data[0][15:0]) + $signed(mix_data[1][15:0]) + $signed(mix_data[2][15:0]) + $signed(mix_data[3][15:0]);
+                n_mix_audio_data[31:16] = mix_audio_data[31:16] + mix_data[MIX_BIT - 1][31:16];
+                n_mix_audio_data[15:0] = mix_audio_data[15:0] + mix_data[MIX_BIT - 1][15:0];
                 n_state = PLAY;
             end
             PLAY: begin
@@ -208,7 +236,7 @@ module MixCore (
             end
             WRITE: begin
                 n_state = READ;
-                if (mix_num[4]) begin
+                if (mix_num[MIX_BIT]) begin
                     mix_addr = write_addr;
                     mix_write = 1;
                     mix_writedata = mix_audio_data;
@@ -221,10 +249,10 @@ module MixCore (
             WRITE_LENGTH: begin
                n_state = IDLE;
                mix_done = 1;
-               if (mix_num[4]) begin
-                    mix_addr = mix_select[4];
+               if (mix_num[MIX_BIT]) begin
+                    mix_addr = mix_select[MIX_BIT];
                     mix_write = 1;
-                    mix_writedata = {9'd0, write_addr - mix_select[4] - 1};
+                    mix_writedata = {9'd0, write_addr - mix_select[MIX_BIT] - 1};
                     if (mix_sdram_finished) begin
                         n_state = IDLE;
                         mix_done = 1;
@@ -232,30 +260,46 @@ module MixCore (
                end
             end
         endcase
-        case(mix_num[3:0])
-            5'b0001: begin
+        case(mix_num[7:0])
+            MIX_BIT'b00000001: begin
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
-                //n_mix_amount = mix_amount + 1;
                 n_initialize = 0;
             end
-            5'b0010: begin
+            MIX_BIT'b00000010: begin
                 n_addr[1] = mix_select[1];
                 n_state = READ_LENGTH;
-                //n_mix_amount = mix_amount + 1;
                 n_initialize = 1;
             end
-            5'b0100: begin
+            MIX_BIT'b00000100: begin
                 n_addr[2] = mix_select[2];                
                 n_state = READ_LENGTH; 
-                //n_mix_amount = mix_amount + 1;
                 n_initialize = 2;
             end
-            5'b1000: begin
+            MIX_BIT'b00001000: begin
                 n_addr[3] = mix_select[3];                
                 n_state = READ_LENGTH;  
-                //n_mix_amount = mix_amount + 1;
                 n_initialize = 3;
+            end
+            MIX_BIT'b00010000: begin
+                n_addr[4] = mix_select[4];                
+                n_state = READ_LENGTH;  
+                n_initialize = 4;
+            end
+            MIX_BIT'b00100000: begin
+                n_addr[5] = mix_select[5];                
+                n_state = READ_LENGTH;  
+                n_initialize = 5;
+            end
+            MIX_BIT'b01000000: begin
+                n_addr[6] = mix_select[6];                
+                n_state = READ_LENGTH;  
+                n_initialize = 6;
+            end
+            MIX_BIT'b10000000: begin
+                n_addr[7] = mix_select[7];                
+                n_state = READ_LENGTH;  
+                n_initialize = 7;
             end
         endcase
         if(mix_stop) begin
@@ -263,17 +307,5 @@ module MixCore (
         end
     end
 
-task SHIFT;
-    input [15:0] data; 
-    input [2:0]  divisor;
-    output [15:0] n_data;
-        
-    case (divisor)
-        3'd2:    n_data = {1'b0, data[14], data[14:1]};
-        3'd3:    n_data = {1'b0, {2{data[14]}}, data[14:2]} + {1'b0, {4{data[14]}}, data[14:4]} + {1'b0, {6{data[14]}}, data[14:6]};
-        3'd4:    n_data = {1'b0, {2{data[14]}}, data[14:2]};
-        default: n_data = data;
-    endcase
-endtask
 
 endmodule
