@@ -5,8 +5,8 @@
 // Divide the SDRAM into reasonable chunks
 
 
-
-parameter bit [22:0] CHUNK [4:0] = '{23'h100000, 23'h0C0000, 23'h080000, 23'h040000, 23'h000000};
+// Half is 23'h400000
+parameter bit [22:0] CHUNK [7:0] = '{23'h380000, 23'h300000, 23'h280000, 23'h200000, 23'h180000, 23'h100000, 23'h080000, 23'h000000};
 
 parameter control_IDLE  = 4'd0;
 parameter control_REC   = 4'd1;
