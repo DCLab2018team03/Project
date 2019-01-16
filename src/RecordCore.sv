@@ -99,11 +99,6 @@ module RecordCore (
                         n_counter = 1;
                     end
                 end
-                if (record_stop) begin
-                    n_state = WRITE_LENGTH;
-                    n_audio_data = {9'd0, addr - record_select[0] - 1};
-                    n_addr = record_select[0];
-                end
             end
             WRITE: begin
                 record_write = 1;
@@ -121,6 +116,10 @@ module RecordCore (
                 end
             end
         endcase
-
+        if (record_stop) begin
+            n_state = WRITE_LENGTH;
+            n_audio_data = {9'd0, addr - record_select[0] - 1};
+            n_addr = record_select[0];
+        end
     end
 endmodule
