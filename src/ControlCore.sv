@@ -40,11 +40,17 @@ module ControlCore (
     // see define for control state
     // Modify to GPIO
     logic REC, PLAY, STOP, MIX, PITCH;
+    /*
     assign REC = gpio[11];
     assign PLAY = gpio[10];
     assign MIX = gpio[9];
     assign STOP = gpio[8];
-    
+    */
+    assign REC = KEY[0];
+    assign PLAY = KEY[1];
+    assign MIX = KEY[2];
+    assign STOP = KEY[3]; 
+
     //assign PITCH = KEY[3];
     
     always_ff @(posedge i_clk or posedge i_rst) begin
@@ -142,21 +148,26 @@ module ControlCore (
                 end
             end
             control_PLAY: begin          
-                case(gpio[3:0])
-                    4'b0001: begin 
+                //case(gpio[3:0])
+                case(SW[8:5])
+                    5'b00001: begin 
                         play_select[0] = CHUNK[0];
 								play_start = 1;
                     end
-                    4'b0010: begin 
+                    5'b00010: begin 
                         play_select[0] = CHUNK[1];
 								play_start = 1;
                     end
-                    4'b0100: begin 
+                    5'b00100: begin 
                         play_select[0] = CHUNK[2];
 								play_start = 1;
                     end
-                    4'b1000: begin 
+                    5'b01000: begin 
                         play_select[0] = CHUNK[3];
+								play_start = 1;
+                    end
+                    5'b10000: begin
+                        play_select[0] = CHUNK[4];
 								play_start = 1;
                     end
                     default: begin
@@ -189,7 +200,7 @@ module ControlCore (
                 play_speed = SW[11:10];
                 if (STOP) begin
                     play_stop = 1;
-						  n_state = control_IDLE;
+					n_state = control_IDLE;
                 end/*
                 if (play_done) begin
                     play_stop = 1;
@@ -198,7 +209,8 @@ module ControlCore (
             control_MIX: begin
                 mix_start = 1;
                 // Modify to GPIO
-                case(gpio[3:0])
+                //case(gpio[3:0])
+				case (SW[8:5])
                     4'b0001: begin 
                         mix_select[0] = CHUNK[0];
                         mix_num[0] = 1;
@@ -212,17 +224,21 @@ module ControlCore (
                         mix_num[2] = 1;
                     end
                     4'b1000: begin 
-                        mix_select[3] = CHUNK[4];
+                        mix_select[3] = CHUNK[3];
                         mix_num[3] = 1;
                     end
                 endcase
+                mix_num[4] = 1;
                 case(SW[4:0])
                     5'b00001: mix_select[4] = CHUNK[0];
                     5'b00010: mix_select[4] = CHUNK[1];
                     5'b00100: mix_select[4] = CHUNK[2];
                     5'b01000: mix_select[4] = CHUNK[3];
                     5'b10000: mix_select[4] = CHUNK[4];
-                    default:  mix_select[4] = 0;
+                    default:  begin
+                        mix_select[4] = 0;
+                        mix_num[4] = 0;
+                    end
                 endcase
                 if (STOP) begin
                     mix_stop = 1;

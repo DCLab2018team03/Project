@@ -35,22 +35,26 @@ module PlayCore (
     output logic [31:0] play_audio_data,
     input  logic play_audio_ready,
 
-    output [1:0] debug
+    output [2:0] debug
 );
-    assign debug = state;
+    assign debug = {1'b0, play_speed};
 
-    logic [1:0] state, n_state;
-    localparam IDLE = 2'b00;
-    localparam READ = 2'b01;
-    localparam PLAY = 2'b10;
-    localparam READ_LENGTH = 2'b11;
+    logic [2:0] state, n_state;
+    localparam IDLE = 3'd0;
+    localparam READ = 3'd1;
+    localparam PLAY = 3'd2;
+    localparam READ_LENGTH = 3'd3;
+    localparam WRITE = 3'd4;
+    localparam WRITE_LENGTH = 3'd5;
 
     logic [31:0] audio_data, n_audio_data;
-    logic [22:0] addr, n_addr, audio_length, n_audio_length;
+    logic [22:0] read_addr, n_read_addr, write_addr, n_write_addr, audio_length, n_audio_length;
     assign play_audio_data = audio_data;
-    assign play_addr = addr;
+    assign play_addr = (play_read == 1) ? read_addr : write_addr;
+    assign play_writedata = (state == WRITE_LENGTH) ? (write_addr - play_select[1]) : audio_data;
 
     logic [1:0] counter, n_counter;
+    logic [22:0] data_length_counter, n_data_length_counter;
 
     // TODO
     // 1. read datalength
@@ -60,29 +64,35 @@ module PlayCore (
         if ( i_rst ) begin
             state <= IDLE;
             audio_data <= 0;
-            addr <= 0;
+            read_addr <= 0;
+            write_addr <= 0;
             counter <= 0;
+            data_length_counter <= 0;
             audio_length <= 0;
         end else begin
             state <= n_state;
             audio_data <= n_audio_data;
-            addr <= n_addr;
+            read_addr <= n_read_addr;
+            write_addr <= n_write_addr;
             counter <= n_counter;
+            data_length_counter <= n_data_length_counter;
             audio_length <= n_audio_length;
         end
     end
 
 
     always_comb begin
-
         n_state = state;
         n_audio_data = audio_data;
-        n_addr = addr; 
+        n_read_addr = read_addr; 
+        n_write_addr = write_addr; 
 
         play_read = 0;
         play_audio_valid = 0;
+        play_write = 0;
 
         n_counter = counter;
+        n_data_length_counter = data_length_counter;
         n_audio_length = audio_length;
         play_done = 0;
 
@@ -91,15 +101,16 @@ module PlayCore (
                 if (play_start) begin
                     n_state = READ_LENGTH;
                 end
-                n_addr = play_select[0];
+                n_read_addr = play_select[0];
+                n_write_addr = play_select[1];
             end
             READ_LENGTH: begin
                 play_read = 1;
-                n_audio_length = addr + play_readdata[22:0] + 1;
+                n_audio_length = read_addr + play_readdata[22:0] + 1;
                 if (play_sdram_finished) begin
                     n_state = READ;
                     n_counter = 0;
-                    n_addr = addr + 1;
+                    n_read_addr = read_addr + 1;
                 end
             end
             READ: begin
@@ -108,11 +119,16 @@ module PlayCore (
                 if (play_sdram_finished) begin
                     n_state = PLAY;
                     n_counter = 0;
-                    n_addr = addr + 1;
+                    n_read_addr = read_addr + 1;
                 end
-                if (addr >= audio_length) begin
-                    n_state = IDLE;
-                    play_done = 1;
+                if (read_addr >= audio_length) begin
+                    if (play_record) begin
+                        n_state = WRITE_LENGTH;
+                    end
+                    else begin
+                        n_state = IDLE;
+                        play_done = 1;
+                    end
                 end
             end
             PLAY: begin
@@ -121,17 +137,53 @@ module PlayCore (
                     if ( (counter >= 1 && play_speed == 2'b00) || 
                          (counter >= 3 && play_speed == 2'b10) || 
                          (counter >= 0 && play_speed == 2'b01)) begin
-                        n_counter = 0;
-                        n_state = READ;
+                        if (play_record) begin
+                            n_state = WRITE;
+                        end
+                        else begin
+                            n_counter = 0;
+                            n_state = READ;
+                        end
                     end else begin
                         n_counter = counter + 1;
+                        if (play_record) begin
+                            n_state = WRITE;
+                        end
+                    end
+                end 
+            end
+            WRITE: begin
+                play_write = 1;
+                if (play_sdram_finished) begin
+                    n_write_addr = write_addr + 1;
+                    n_data_length_counter = data_length_counter + 1;
+                    if ( (counter >= 1 && play_speed == 2'b00) || 
+                         (counter >= 3 && play_speed == 2'b10) || 
+                         (counter >= 0 && play_speed == 2'b01)) begin
+                        n_counter = 0;
+                        n_state = READ;
+                    end
+                    else begin
+                        n_state = PLAY;
                     end
                 end
             end
+            WRITE_LENGTH: begin
+                play_write = 1;
+                if (play_sdram_finished) begin
+                    n_state = IDLE;            
+                    play_done = 1;
+                end
+            end            
         endcase
         if (play_stop) begin
-            n_state = IDLE;
-            play_done = 1;
+            if (play_record) begin
+                n_state = IDLE;
+            end
+            else begin
+                n_state = IDLE;
+                play_done = 1;
+            end
         end
     end
 endmodule

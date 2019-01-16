@@ -43,8 +43,8 @@ module MixCore (
     logic [2:0] state, n_state;
     logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
-    logic signed [LG_MIX_BIT:0] mix_amount, n_mix_amount, mix_counter, n_mix_counter;
-    logic [LG_MIX_BIT - 1:0] initialize, n_initialize;
+    logic [LG_MIX_BIT:0] mix_amount, n_mix_amount;
+    logic [LG_MIX_BIT - 1:0] initialize, n_initialize, mix_counter, n_mix_counter;
 
     logic signed [31:0] n_mix_audio_data;
     logic counter, n_counter;
@@ -172,8 +172,12 @@ module MixCore (
                 end
             end
             DIVIDE: begin
-                SHIFT(mix_data[mix_counter][31:16], mix_amount, n_mix_data[31:16]);
-                SHIFT(mix_data[mix_counter][15:0], mix_amount, n_mix_data[15:0]);
+                case (mix_amount)
+                    3'd2:    n_mix_data[counter] = {1'b0, mix_data[counter][14], mix_data[counter][14:1]};
+                    3'd3:    n_mix_data[counter] = {1'b0, {2{mix_data[counter][14]}}, mix_data[counter][14:2]} + {1'b0, {4{mix_data[counter][14]}}, mix_data[counter][14:4]} + {1'b0, {6{mix_data[counter][14]}}, mix_data[counter][14:6]};
+                    3'd4:    n_mix_data[counter] = {1'b0, {2{mix_data[counter][14]}}, mix_data[counter][14:2]};
+                    default: n_mix_data[counter] = mix_data[counter];
+                endcase
                 //n_mix_data[mix_counter][31:16] = {1'b0, mix_data[mix_counter][30], mix_data[mix_counter][30:17]};
                 //n_mix_data[mix_counter][15:0] = {1'b0, mix_data[mix_counter][14], mix_data[mix_counter][14:1]};
                 n_mix_counter = mix_counter + 1;
@@ -266,9 +270,9 @@ task SHIFT;
         
     case (divisor)
         3'd2:    n_data = {1'b0, data[14], data[14:1]};
-        3'd3:    n_data = {1'b0, 2{data[14]}, data[14:2]} + {1'b0, 4{data[14]}, data[14:4]} + {1'b0, 6{data[14]}, data[14:6]};
-        3'd4:    n_data = {1'b0, 2{data[14]}, data[14:2]};
-        default: n_data = n_data;
+        3'd3:    n_data = {1'b0, {2{data[14]}}, data[14:2]} + {1'b0, {4{data[14]}}, data[14:4]} + {1'b0, {6{data[14]}}, data[14:6]};
+        3'd4:    n_data = {1'b0, {2{data[14]}}, data[14:2]};
+        default: n_data = data;
     endcase
 endtask
 

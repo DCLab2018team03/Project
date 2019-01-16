@@ -194,7 +194,7 @@ module AcappellaCore (
         .play_audio_data(play_audio_data),
         .play_audio_ready(play_audio_ready),
         
-        .debug()
+        .debug(debug)
     );
 
     logic [3:0] control_mode;
@@ -235,7 +235,7 @@ module AcappellaCore (
         .play_done(play_done),
         .play_record(play_record),
         .play_speed(play_speed),
-        .debug(debug)
+        .debug()
     );
 
     logic sdram_read, sdram_write, sdram_finished;

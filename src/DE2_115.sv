@@ -330,7 +330,7 @@ module DE2_115 (
 		.button_pushed(button_pushed)
 	);*/
 	
-	assign LEDR[17:0] = ~GPIO[17:0];
+	assign LEDR[17:0] = 0;//~GPIO[17:0];
     Debounce deb12(.i_in(KEY[0]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[0]));
     Debounce deb13(.i_in(KEY[1]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[1]));
     Debounce deb14(.i_in(KEY[2]), .i_clk(CLOCK_50), .o_neg(KEY_debounced[2]));
