@@ -14,8 +14,8 @@ module MixCore (
     input logic i_rst,
     // To controller
     input  logic mix_start,
-    input  logic [22:0] mix_select [8:0],
-    input  logic [8:0] mix_num,
+    input  logic [22:0] mix_select [16:0], // MIX_BIT - 1 - 0 for mixing
+    input  logic [16:0] mix_num,           // MIX_BIT for recording
     input  logic [7:0] mix_loop,
     input  logic mix_stop,
     output logic mix_done,
@@ -38,8 +38,8 @@ module MixCore (
 
     //assign debug = state;
 
-    localparam MIX_BIT = 8;
-    localparam LG_MIX_BIT = 3;
+    localparam MIX_BIT = 16;
+    localparam LG_MIX_BIT = 4;
 
     logic [2:0] state, n_state;
     logic [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
@@ -129,6 +129,14 @@ module MixCore (
                 n_length[5] = 0;
                 n_length[6] = 0;
                 n_length[7] = 0;
+                n_length[8] = 0;
+                n_length[9] = 0;
+                n_length[10] = 0;
+                n_length[11] = 0;
+                n_length[12] = 0;
+                n_length[13] = 0;
+                n_length[14] = 0;
+                n_length[15] = 0;
                 n_addr[0] = 0;
                 n_addr[1] = 0;
                 n_addr[2] = 0;
@@ -137,6 +145,14 @@ module MixCore (
                 n_addr[5] = 0;
                 n_addr[6] = 0;
                 n_addr[7] = 0;
+                n_addr[8] = 0;
+                n_addr[9] = 0;
+                n_addr[10] = 0;
+                n_addr[11] = 0;
+                n_addr[12] = 0;
+                n_addr[13] = 0;
+                n_addr[14] = 0;
+                n_addr[15] = 0;
                 n_mix_data[0] = 0;
                 n_mix_data[1] = 0;
                 n_mix_data[2] = 0;
@@ -145,6 +161,14 @@ module MixCore (
                 n_mix_data[5] = 0;
                 n_mix_data[6] = 0;
                 n_mix_data[7] = 0;
+                n_mix_data[8] = 0;
+                n_mix_data[9] = 0;
+                n_mix_data[10] = 0;
+                n_mix_data[11] = 0;
+                n_mix_data[12] = 0;
+                n_mix_data[13] = 0;
+                n_mix_data[14] = 0;
+                n_mix_data[15] = 0;
                 n_write_addr = mix_select[MIX_BIT] + 1;
             end
             READ_LENGTH: begin
@@ -268,46 +292,86 @@ module MixCore (
                end
             end
         endcase
-        case(mix_num[7:0])
-            8'b00000001: begin
+        case(mix_num[15:0])
+            16'h0001: begin
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
                 n_initialize = 0;
             end
-            8'b00000010: begin
+            16'h0002: begin
                 n_addr[1] = mix_select[1];
                 n_state = READ_LENGTH;
                 n_initialize = 1;
             end
-            8'b00000100: begin
+            16'h0004: begin
                 n_addr[2] = mix_select[2];                
                 n_state = READ_LENGTH; 
                 n_initialize = 2;
             end
-            8'b00001000: begin
+            16'h0008: begin
                 n_addr[3] = mix_select[3];                
                 n_state = READ_LENGTH;  
                 n_initialize = 3;
             end
-            8'b00010000: begin
+            16'h0010: begin
                 n_addr[4] = mix_select[4];                
                 n_state = READ_LENGTH;  
                 n_initialize = 4;
             end
-            8'b00100000: begin
+            16'h0020: begin
                 n_addr[5] = mix_select[5];                
                 n_state = READ_LENGTH;  
                 n_initialize = 5;
             end
-            8'b01000000: begin
+            16'h0040: begin
                 n_addr[6] = mix_select[6];                
                 n_state = READ_LENGTH;  
                 n_initialize = 6;
             end
-            8'b10000000: begin
+            16'h0080: begin
                 n_addr[7] = mix_select[7];                
                 n_state = READ_LENGTH;  
                 n_initialize = 7;
+            end
+            16'h0100: begin
+                n_addr[8] = mix_select[8];
+                n_state = READ_LENGTH;
+                n_initialize = 8;
+            end
+            16'h0200: begin
+                n_addr[9] = mix_select[9];
+                n_state = READ_LENGTH;
+                n_initialize = 9;
+            end
+            16'h0400: begin
+                n_addr[10] = mix_select[10];                
+                n_state = READ_LENGTH; 
+                n_initialize = 10;
+            end
+            16'h0800: begin
+                n_addr[11] = mix_select[11];                
+                n_state = READ_LENGTH;  
+                n_initialize = 11;
+            end
+            16'h1000: begin
+                n_addr[12] = mix_select[12];                
+                n_state = READ_LENGTH;  
+                n_initialize = 12;
+            end
+            16'h2000: begin
+                n_addr[13] = mix_select[13];                
+                n_state = READ_LENGTH;  
+                n_initialize = 13;
+            end
+            16'h4000: begin
+                n_addr[14] = mix_select[14];                
+                n_state = READ_LENGTH;  
+                n_initialize = 14;
+            end
+            16'h8000: begin
+                n_addr[15] = mix_select[15];                
+                n_state = READ_LENGTH;  
+                n_initialize = 15;
             end
         endcase
         if(mix_stop) begin
