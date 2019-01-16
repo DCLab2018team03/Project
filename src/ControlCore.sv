@@ -119,23 +119,18 @@ module ControlCore (
                 case(SW[4:0])
                     5'b00001: begin
                         record_select[0] = CHUNK[0];
-                        play_record = 1;
                     end
                     5'b00010: begin
                         record_select[0] = CHUNK[1];
-                        play_record = 1;
                     end
                     5'b00100: begin
                         record_select[0] = CHUNK[2];
-                        play_record = 1;
                     end
                     5'b01000: begin
                         record_select[0] = CHUNK[3];
-                        play_record = 1;
                     end
                     5'b10000: begin
                         record_select[0] = CHUNK[4];
-                        play_record = 1;
                     end
                     default:  record_select[0] = 0;
                 endcase
@@ -146,37 +141,59 @@ module ControlCore (
                     n_state = control_IDLE;
                 end
             end
-            control_PLAY: begin
-                play_start = 1;
+            control_PLAY: begin          
                 case(gpio[3:0])
                     4'b0001: begin 
                         play_select[0] = CHUNK[0];
+								play_start = 1;
                     end
                     4'b0010: begin 
                         play_select[0] = CHUNK[1];
+								play_start = 1;
                     end
                     4'b0100: begin 
                         play_select[0] = CHUNK[2];
+								play_start = 1;
                     end
                     4'b1000: begin 
-                        play_select[0] = CHUNK[4];
+                        play_select[0] = CHUNK[3];
+								play_start = 1;
+                    end
+                    default: begin
+                        play_select[0] = CHUNK[0];
                     end
                 endcase                
                 case(SW[4:0])
-                    5'b00001: play_select[1] = CHUNK[0];
-                    5'b00010: play_select[1] = CHUNK[1];
-                    5'b00100: play_select[1] = CHUNK[2];
-                    5'b01000: play_select[1] = CHUNK[3];
-                    5'b10000: play_select[1] = CHUNK[4];
+                    5'b00001: begin
+                        play_select[1] = CHUNK[0];
+                        play_record = 1;
+                    end
+                    5'b00010: begin
+                        play_select[1] = CHUNK[1];
+                        play_record = 1;
+                    end
+                    5'b00100: begin
+                        play_select[1] = CHUNK[2];
+                        play_record = 1;
+                    end
+                    5'b01000: begin
+                        play_select[1] = CHUNK[3];
+                        play_record = 1;
+                    end
+                    5'b10000: begin
+                        play_select[1] = CHUNK[4];
+                        play_record = 1;
+                    end
                     default:  play_select[1] = 0;
                 endcase
                 play_speed = SW[11:10];
                 if (STOP) begin
                     play_stop = 1;
-                end
+						  n_state = control_IDLE;
+                end/*
                 if (play_done) begin
-                    n_state = control_IDLE;
-                end
+                    play_stop = 1;
+                end*/
             end
             control_MIX: begin
                 mix_start = 1;
@@ -200,12 +217,12 @@ module ControlCore (
                     end
                 endcase
                 case(SW[4:0])
-                    5'b00001: mix_select[1] = CHUNK[0];
-                    5'b00010: mix_select[1] = CHUNK[1];
-                    5'b00100: mix_select[1] = CHUNK[2];
-                    5'b01000: mix_select[1] = CHUNK[3];
-                    5'b10000: mix_select[1] = CHUNK[4];
-                    default:  mix_select[1] = 0;
+                    5'b00001: mix_select[4] = CHUNK[0];
+                    5'b00010: mix_select[4] = CHUNK[1];
+                    5'b00100: mix_select[4] = CHUNK[2];
+                    5'b01000: mix_select[4] = CHUNK[3];
+                    5'b10000: mix_select[4] = CHUNK[4];
+                    default:  mix_select[4] = 0;
                 endcase
                 if (STOP) begin
                     mix_stop = 1;

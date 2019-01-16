@@ -34,7 +34,7 @@ module SDRAMBus (
     assign new_sdram_controller_0_s1_writedata = sdram_writedata;
     
     logic [1:0] state, n_state;
-    logic [1:0] wait_counter, n_wait_counter;
+    logic [2:0] wait_counter, n_wait_counter;
     assign debug = state;
     localparam IDLE  = 2'b00;
     localparam READ  = 2'b01;
@@ -80,7 +80,7 @@ module SDRAMBus (
                 end
             end
             READ_WAIT: begin
-                if (wait_counter == 3) begin
+                if (wait_counter == 3'd7) begin
                     n_state = IDLE;
                 end
                 n_wait_counter = wait_counter + 1;

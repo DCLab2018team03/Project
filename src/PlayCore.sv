@@ -95,7 +95,7 @@ module PlayCore (
             end
             READ_LENGTH: begin
                 play_read = 1;
-                n_audio_length = play_select[0] + play_readdata[22:0] + 1;
+                n_audio_length = addr + play_readdata[22:0] + 1;
                 if (play_sdram_finished) begin
                     n_state = READ;
                     n_counter = 0;

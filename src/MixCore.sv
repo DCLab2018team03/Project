@@ -179,8 +179,8 @@ module MixCore (
                 end
             end*/
             DIVIDE: begin
-                n_mix_data[mix_counter][31:16] = $signed(mix_data[mix_counter][31:16]);// / $signed(mix_amount);
-                n_mix_data[mix_counter][15:0] = $signed(mix_data[mix_counter][15:0]);// / $signed(mix_amount);
+                n_mix_data[mix_counter][31:16] = {1'b0, mix_data[mix_counter][30], mix_data[mix_counter][30:17]};
+                n_mix_data[mix_counter][15:0] = {1'b0, mix_data[mix_counter][14], mix_data[mix_counter][14:1]};
                 n_mix_counter = mix_counter + 1;
                 if (mix_counter == 3) begin
                     n_state = ADD;
