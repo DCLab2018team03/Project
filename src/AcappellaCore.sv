@@ -41,7 +41,7 @@ module AcappellaCore (
     output        SRAM_LB_N,   // SRAM Low-byte Data Mask 
     input  [11:0]  button_pushed
 );
-    logic [2:0] debug;
+    logic [3:0] debug;
 
     logic loaddata_done, loaddata_write, loaddata_sdram_finished;
     logic [22:0] loaddata_addr;
@@ -62,8 +62,9 @@ module AcappellaCore (
     );
 
     logic mix_start, mix_stop, mix_done;
-    logic [22:0] mix_select [4:0]; 
-    logic [4:0] mix_num;
+    logic [22:0] mix_select [8:0]; 
+    logic [8:0] mix_num;
+    logic [7:0] mix_loop;
     logic mix_read, mix_write, mix_sdram_finished;
     logic [22:0] mix_addr;
     logic [31:0] mix_readdata, mix_writedata;
@@ -78,6 +79,7 @@ module AcappellaCore (
         .mix_start(mix_start),
         .mix_select(mix_select),
         .mix_num(mix_num),
+        .mix_loop(mix_loop),
         .mix_stop(mix_stop),
         .mix_done(mix_done),
 
@@ -194,7 +196,7 @@ module AcappellaCore (
         .play_audio_data(play_audio_data),
         .play_audio_ready(play_audio_ready),
         
-        .debug(debug)
+        .debug()
     );
 
     logic [3:0] control_mode;
@@ -213,6 +215,7 @@ module AcappellaCore (
         .mix_start(mix_start),
         .mix_select(mix_select),
         .mix_num(mix_num),
+        .mix_loop(mix_loop),
         .mix_stop(mix_stop),
         .mix_done(mix_done),
 
@@ -235,7 +238,7 @@ module AcappellaCore (
         .play_done(play_done),
         .play_record(play_record),
         .play_speed(play_speed),
-        .debug()
+        .debug(debug)
     );
 
     logic sdram_read, sdram_write, sdram_finished;

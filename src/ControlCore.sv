@@ -12,6 +12,7 @@ module ControlCore (
     output logic mix_start,
     output logic [22:0] mix_select [8:0],
     output logic [8:0] mix_num,
+    output logic [7:0] mix_loop,
     output logic mix_stop,
     input  logic mix_done,
     output logic pitch_start,
@@ -30,7 +31,7 @@ module ControlCore (
     output logic play_stop,
     input  logic play_done,
     output logic play_record,
-    output logic play_speed,
+    output logic [1:0] play_speed,
     output [3:0] debug
 );
     assign debug = state;
@@ -80,7 +81,7 @@ module ControlCore (
     assign play_pause = 0;
     //assign play_stop = 0;
 
-    int i;
+    int i, j;
 
     always_comb begin
         
@@ -99,13 +100,16 @@ module ControlCore (
         for (i = 0; i < 9; i = i+1) begin
             mix_select[i] = 0;
         end
+        for (j = 0; j < 8; j = j+1) begin
+            mix_loop[j] = 0;
+        end
         pitch_select[0] = 0;
         pitch_select[1] = 0;
         pitch_mode = 0;
         pitch_speed = 0;
         mix_num = 9'd0;
         play_record = 0;
-        play_speed = 0;
+        play_speed = 2'b00;
         case(state)
             control_IDLE: begin
                 if (REC) begin
@@ -165,7 +169,7 @@ module ControlCore (
                 end
             end
             control_PLAY: begin          
-                case(gpio[7:0])
+                case({gpio[13],[6:0]})
                     8'b0000_0001: begin 
                         play_select[0] = CHUNK[0];
                         if(~SW[0]) play_start = 1;
@@ -248,7 +252,7 @@ module ControlCore (
             control_MIX: begin
                 mix_start = 1;
                 // Modify to GPIO
-                case(gpio[7:0])
+                case({gpio[13],gpio[6:0]})
                     8'b0000_0001: begin 
                         mix_select[0] = CHUNK[0];
                         if(~SW[0]) mix_num[0] = 1;
@@ -296,6 +300,16 @@ module ControlCore (
                         mix_select[8] = 0;
                         mix_num[8] = 0;
                     end
+                endcase
+                case(SW[15:8])
+                    8'b0000_0001: mix_loop[0] = 1;
+                    8'b0000_0010: mix_loop[1] = 1;
+                    8'b0000_0100: mix_loop[2] = 1;
+                    8'b0000_1000: mix_loop[3] = 1;
+                    8'b0001_0000: mix_loop[4] = 1;
+                    8'b0010_0000: mix_loop[5] = 1;
+                    8'b0100_0000: mix_loop[6] = 1;
+                    8'b1000_0000: mix_loop[7] = 1;
                 endcase
                 if (STOP) begin
                     mix_stop = 1;

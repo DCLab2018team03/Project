@@ -51,7 +51,7 @@ module PlayCore (
     logic [22:0] read_addr, n_read_addr, write_addr, n_write_addr, audio_length, n_audio_length;
     assign play_audio_data = audio_data;
     assign play_addr = (play_read == 1) ? read_addr : write_addr;
-    assign play_writedata = (state == WRITE_LENGTH) ? (write_addr - play_select[1]) : audio_data;
+    assign play_writedata = (state == WRITE_LENGTH) ? data_length_counter : audio_data;
 
     logic [1:0] counter, n_counter;
     logic [22:0] data_length_counter, n_data_length_counter;
@@ -102,7 +102,7 @@ module PlayCore (
                     n_state = READ_LENGTH;
                 end
                 n_read_addr = play_select[0];
-                n_write_addr = play_select[1];
+                n_write_addr = play_select[1] + 1;
             end
             READ_LENGTH: begin
                 play_read = 1;
@@ -121,13 +121,13 @@ module PlayCore (
                     n_counter = 0;
                     n_read_addr = read_addr + 1;
                 end
-                if (read_addr >= audio_length) begin
+                if (read_addr > audio_length) begin
                     if (play_record) begin
                         n_state = WRITE_LENGTH;
+                        n_write_addr = play_select[1];
                     end
                     else begin
                         n_state = IDLE;
-                        play_done = 1;
                     end
                 end
             end
@@ -146,9 +146,9 @@ module PlayCore (
                         end
                     end else begin
                         n_counter = counter + 1;
-                        if (play_record) begin
+                        /*if (play_record) begin
                             n_state = WRITE;
-                        end
+                        end*/
                     end
                 end 
             end
