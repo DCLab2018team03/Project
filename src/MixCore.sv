@@ -29,7 +29,7 @@ module MixCore (
 
     // To Audio
     output logic mix_audio_valid,
-    output logic signed [31:0] mix_audio_data,
+    output logic [31:0] mix_audio_data,
     input  logic mix_audio_ready,
 
     output [2:0] debug
@@ -41,7 +41,7 @@ module MixCore (
     localparam LG_MIX_BIT = 3;
 
     logic [2:0] state, n_state;
-    logic signed [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
+    logic [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
     logic [LG_MIX_BIT:0] mix_amount, n_mix_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize, mix_counter, n_mix_counter;
@@ -182,6 +182,7 @@ module MixCore (
                         n_mix_counter = 0;
                     end
                 end
+                n_mix_audio_data = 0;
             end
             DIVIDE: begin
                 if (mix_counter != 0) begin
@@ -261,42 +262,42 @@ module MixCore (
             end
         endcase
         case(mix_num[7:0])
-            MIX_BIT'b00000001: begin
+            8'b00000001: begin
                 n_addr[0] = mix_select[0];
                 n_state = READ_LENGTH;
                 n_initialize = 0;
             end
-            MIX_BIT'b00000010: begin
+            8'b00000010: begin
                 n_addr[1] = mix_select[1];
                 n_state = READ_LENGTH;
                 n_initialize = 1;
             end
-            MIX_BIT'b00000100: begin
+            8'b00000100: begin
                 n_addr[2] = mix_select[2];                
                 n_state = READ_LENGTH; 
                 n_initialize = 2;
             end
-            MIX_BIT'b00001000: begin
+            8'b00001000: begin
                 n_addr[3] = mix_select[3];                
                 n_state = READ_LENGTH;  
                 n_initialize = 3;
             end
-            MIX_BIT'b00010000: begin
+            8'b00010000: begin
                 n_addr[4] = mix_select[4];                
                 n_state = READ_LENGTH;  
                 n_initialize = 4;
             end
-            MIX_BIT'b00100000: begin
+            8'b00100000: begin
                 n_addr[5] = mix_select[5];                
                 n_state = READ_LENGTH;  
                 n_initialize = 5;
             end
-            MIX_BIT'b01000000: begin
+            8'b01000000: begin
                 n_addr[6] = mix_select[6];                
                 n_state = READ_LENGTH;  
                 n_initialize = 6;
             end
-            MIX_BIT'b10000000: begin
+            8'b10000000: begin
                 n_addr[7] = mix_select[7];                
                 n_state = READ_LENGTH;  
                 n_initialize = 7;
