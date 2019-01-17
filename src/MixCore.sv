@@ -16,7 +16,7 @@ module MixCore (
     input  logic mix_start,
     input  logic [22:0] mix_select [16:0], // MIX_BIT - 1 - 0 for mixing
     input  logic [16:0] mix_num,           // MIX_BIT for recording
-    input  logic [7:0] mix_loop,
+    input  logic [15:0] mix_loop,
     input  logic mix_stop,
     output logic mix_done,
 
@@ -44,7 +44,6 @@ module MixCore (
     logic [2:0] state, n_state;
     logic [31:0] mix_data [MIX_BIT - 1:0], n_mix_data[MIX_BIT - 1:0];
     logic [22:0] length [MIX_BIT - 1:0], n_length [MIX_BIT - 1:0], addr [MIX_BIT - 1:0], n_addr [MIX_BIT - 1:0];
-    logic [LG_MIX_BIT:0] mix_amount, n_mix_amount;
     logic [LG_MIX_BIT - 1:0] initialize, n_initialize, mix_counter, n_mix_counter;
 
     logic signed [31:0] n_mix_audio_data;
@@ -71,7 +70,6 @@ module MixCore (
                 addr[i] <= 0;
                 mix_data[i] <= 0;
             end
-            mix_amount <= 0;
             mix_counter <= 0;
             initialize <= 0;
             mix_audio_data <= 0;
@@ -85,7 +83,6 @@ module MixCore (
                 addr[j] <= n_addr[j]; // data length (stop when eaual to length)
                 mix_data[j] <= n_mix_data[j]; // data 
             end
-            mix_amount <= n_mix_amount;  // how many data is mixing now
             mix_counter <= n_mix_counter; // which data is processing now
             initialize <= n_initialize; // which data to initialize (get length) 
             mix_audio_data <= n_mix_audio_data; // data to audio
@@ -103,7 +100,6 @@ module MixCore (
             n_addr[k] = addr[k];
             n_mix_data[k] = mix_data[k];
         end
-        n_mix_amount = mix_amount;
         n_mix_counter = mix_counter;
         n_initialize = initialize;
         n_counter = counter;
@@ -180,7 +176,6 @@ module MixCore (
                     n_mix_counter = 0;
                     n_addr[initialize] = addr[initialize] + 1;
 
-                    n_mix_amount = 0;
                 end
             end
             READ: begin
@@ -192,7 +187,6 @@ module MixCore (
                         n_state = READ;
                         n_addr[mix_counter] = addr[mix_counter] + 1;
                         n_mix_counter = mix_counter + 1;
-                        n_mix_amount = mix_amount + 1;
                         if (mix_counter == MIX_BIT - 1) begin
                             n_state = DIVIDE;
                             n_mix_counter = 0;
@@ -242,9 +236,6 @@ module MixCore (
                     n_state = ADD;
                     n_mix_counter = 0;
                 end
-                if (mix_amount == 0) begin
-                    n_state = READ;
-                end
             end
             ADD: begin
                 n_mix_audio_data[31:16] = mix_audio_data[31:16] + mix_data[MIX_BIT - 1][31:16];
@@ -257,7 +248,6 @@ module MixCore (
                     if ( counter == 1 ) begin
                         n_state = WRITE;
                         n_counter = 0;
-                        n_mix_amount = 0;
                     end else begin
                         n_counter = 1;
                     end

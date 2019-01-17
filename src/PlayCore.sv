@@ -137,13 +137,15 @@ module PlayCore (
                     if ( (counter >= 1 && play_speed == 2'b00) || 
                          (counter >= 3 && play_speed == 2'b10) || 
                          (counter >= 0 && play_speed == 2'b01)) begin
-                        if (play_record) begin
+                        /*if (play_record) begin
                             n_state = WRITE;
                         end
                         else begin
                             n_counter = 0;
                             n_state = READ;
-                        end
+                        end*/
+                        n_state = WRITE;
+                        n_counter = 0;
                     end else begin
                         n_counter = counter + 1;
                         /*if (play_record) begin
@@ -153,11 +155,15 @@ module PlayCore (
                 end 
             end
             WRITE: begin
-                play_write = 1;
-                if (play_sdram_finished) begin
-                    n_write_addr = write_addr + 1;
-                    n_data_length_counter = data_length_counter + 1;
-                    if ( (counter >= 1 && play_speed == 2'b00) || 
+                n_state = READ;
+                if (play_record) begin 
+                    play_write = 1;
+                    n_state = WRITE;
+                    if (play_sdram_finished) begin
+                        n_write_addr = write_addr + 1;
+                        n_data_length_counter = data_length_counter + 1;
+                        n_state = READ;
+                    /*if ( (counter >= 1 && play_speed == 2'b00) || 
                          (counter >= 3 && play_speed == 2'b10) || 
                          (counter >= 0 && play_speed == 2'b01)) begin
                         n_counter = 0;
@@ -165,6 +171,7 @@ module PlayCore (
                     end
                     else begin
                         n_state = PLAY;
+                    end*/
                     end
                 end
             end
@@ -178,7 +185,7 @@ module PlayCore (
         endcase
         if (play_stop) begin
             if (play_record) begin
-                n_state = IDLE;
+                n_state = WRITE_LENGTH;
             end
             else begin
                 n_state = IDLE;
