@@ -1,0 +1,64 @@
+Info: Starting: Create block symbol file (.bsf)
+Info: qsys-generate C:\Users\question_mark\Desktop\lab3_test4\DE2_115\Total.qsys --block-symbol-file --output-directory=C:\Users\question_mark\Desktop\mix_test\DE2_115\Total --family="Cyclone IV E" --part=EP4CE115F29C7
+Progress: Loading DE2_115/Total.qsys
+Progress: Reading input file
+Progress: Adding audio_0 [altera_up_avalon_audio 15.0]
+Progress: Parameterizing module audio_0
+Progress: Adding audio_and_video_config_0 [altera_up_avalon_audio_and_video_config 15.0]
+Progress: Parameterizing module audio_and_video_config_0
+Progress: Adding audio_pll_0 [altera_up_avalon_audio_pll 15.0]
+Progress: Parameterizing module audio_pll_0
+Progress: Adding clk_0 [clock_source 15.0]
+Progress: Parameterizing module clk_0
+Progress: Adding new_sdram_controller_0 [altera_avalon_new_sdram_controller 15.0]
+Progress: Parameterizing module new_sdram_controller_0
+Progress: Adding sys_sdram_pll_0 [altera_up_avalon_sys_sdram_pll 15.0]
+Progress: Parameterizing module sys_sdram_pll_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: Total.audio_and_video_config_0: The data format must be Left Justified, if using the Altera UP Audio IP Core.
+Warning: Total.audio_and_video_config_0: audio_and_video_config_0.avalon_av_config_slave must be connected to an Avalon-MM master
+Info: ip-generate succeeded.
+Info: Finished: Create block symbol file (.bsf)
+Info: 
+Info: Starting: Create HDL design files for synthesis
+Info: qsys-generate C:\Users\question_mark\Desktop\lab3_test4\DE2_115\Total.qsys --synthesis=VERILOG --output-directory=C:\Users\question_mark\Desktop\mix_test\DE2_115\Total\synthesis --family="Cyclone IV E" --part=EP4CE115F29C7
+Progress: Loading DE2_115/Total.qsys
+Progress: Reading input file
+Progress: Adding audio_0 [altera_up_avalon_audio 15.0]
+Progress: Parameterizing module audio_0
+Progress: Adding audio_and_video_config_0 [altera_up_avalon_audio_and_video_config 15.0]
+Progress: Parameterizing module audio_and_video_config_0
+Progress: Adding audio_pll_0 [altera_up_avalon_audio_pll 15.0]
+Progress: Parameterizing module audio_pll_0
+Progress: Adding clk_0 [clock_source 15.0]
+Progress: Parameterizing module clk_0
+Progress: Adding new_sdram_controller_0 [altera_avalon_new_sdram_controller 15.0]
+Progress: Parameterizing module new_sdram_controller_0
+Progress: Adding sys_sdram_pll_0 [altera_up_avalon_sys_sdram_pll 15.0]
+Progress: Parameterizing module sys_sdram_pll_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: Total.audio_and_video_config_0: The data format must be Left Justified, if using the Altera UP Audio IP Core.
+Warning: Total.audio_and_video_config_0: audio_and_video_config_0.avalon_av_config_slave must be connected to an Avalon-MM master
+Info: Total: Generating Total "Total" for QUARTUS_SYNTH
+Info: audio_0: Starting Generation of Audio Controller
+Info: audio_0: "Total" instantiated altera_up_avalon_audio "audio_0"
+Info: audio_and_video_config_0: Starting Generation of Audio and Video Config
+Info: audio_and_video_config_0: "Total" instantiated altera_up_avalon_audio_and_video_config "audio_and_video_config_0"
+Info: audio_pll_0: "Total" instantiated altera_up_avalon_audio_pll "audio_pll_0"
+Info: new_sdram_controller_0: Starting RTL generation for module 'Total_new_sdram_controller_0'
+Info: new_sdram_controller_0:   Generation command is [exec C:/altera/15.0/quartus/bin64/perl/bin/perl.exe -I C:/altera/15.0/quartus/bin64/perl/lib -I C:/altera/15.0/quartus/sopc_builder/bin/europa -I C:/altera/15.0/quartus/sopc_builder/bin/perl_lib -I C:/altera/15.0/quartus/sopc_builder/bin -I C:/altera/15.0/quartus/../ip/altera/sopc_builder_ip/common -I C:/altera/15.0/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller -- C:/altera/15.0/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/generate_rtl.pl --name=Total_new_sdram_controller_0 --dir=C:/Users/QUESTI~1/AppData/Local/Temp/alt7911_8871178755268377449.dir/0003_new_sdram_controller_0_gen/ --quartus_dir=C:/altera/15.0/quartus --verilog --config=C:/Users/QUESTI~1/AppData/Local/Temp/alt7911_8871178755268377449.dir/0003_new_sdram_controller_0_gen//Total_new_sdram_controller_0_component_configuration.pl  --do_build_sim=0  ]
+Info: new_sdram_controller_0: Done RTL generation for module 'Total_new_sdram_controller_0'
+Info: new_sdram_controller_0: "Total" instantiated altera_avalon_new_sdram_controller "new_sdram_controller_0"
+Info: sys_sdram_pll_0: "Total" instantiated altera_up_avalon_sys_sdram_pll "sys_sdram_pll_0"
+Info: rst_controller: "Total" instantiated altera_reset_controller "rst_controller"
+Info: audio_pll: "audio_pll_0" instantiated altera_up_altpll "audio_pll"
+Info: reset_from_locked: "audio_pll_0" instantiated altera_up_avalon_reset_from_locked_signal "reset_from_locked"
+Info: Total: Done "Total" with 9 modules, 28 files
+Info: ip-generate succeeded.
+Info: Finished: Create HDL design files for synthesis
